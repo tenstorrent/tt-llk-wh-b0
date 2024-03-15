@@ -171,18 +171,22 @@ inline void _llk_math_eltwise_binary_(const std::uint32_t num_faces, uint dst_in
             // Row and no broadcasted behaves similarly
             const uint32_t outerloop = (binary_reuse_dest != EltwiseBinaryReuseDestType::NONE) ? num_faces : 1;
             if constexpr (high_fidelity) {
-#pragma GCC unroll 0
-                for (std::uint32_t n = 0; n < num_faces; n++) {  // N-num faces
-                    eltwise_binary_reuse_dest_as_src<binary_reuse_dest>();
-                    if constexpr (binary_reuse_dest != EltwiseBinaryReuseDestType::NONE) {
-                        if (is_fp32_dest_acc_en && clear_fp32_dst_acc) {
-                            TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 3)) + n*2);
-                            TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 3)) + ((n*2)+1));
-                        } else {
-                            TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 2)) + n);
-                        }
-                    }
+                if (num_faces == 4 && src_b_bcast_type == p_elwise::SRCB_NO_BCAST && binary_reuse_dest == EltwiseBinaryReuseDestType::NONE) {
                     ckernel_template::run(instrn_buffer);
+                } else {
+#pragma GCC unroll 0
+                    for (std::uint32_t n = 0; n < num_faces; n++) {  // N-num faces
+                        eltwise_binary_reuse_dest_as_src<binary_reuse_dest>();
+                        if constexpr (binary_reuse_dest != EltwiseBinaryReuseDestType::NONE) {
+                            if (is_fp32_dest_acc_en && clear_fp32_dst_acc) {
+                                TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 3)) + n*2);
+                                TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 3)) + ((n*2)+1));
+                            } else {
+                                TT_ZEROACC(ZERO_ACC_MODE, ADDR_MOD_1, ((get_dest_buffer_base() >> 4) + (dst_index << 2)) + n);
+                            }
+                        }
+                        ckernel_template::run(instrn_buffer);
+                    }
                 }
             } else {
 #pragma GCC unroll 0
@@ -304,26 +308,53 @@ inline void eltwise_binary_configure_mop(const std::uint32_t acc_to_dest = 0, co
         }
     } else {
         if constexpr (eltwise_binary_type == ELWADD) {
-            ckernel_template tmp(outerloop, innerloop, TT_OP_ELWADD(0, acc_to_dest, broadcast_type, addr_mod, 0));
-            tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
-            tmp.program(instrn_buffer);
-        } else if constexpr (eltwise_binary_type == ELWSUB) {
-            ckernel_template tmp(outerloop, innerloop, TT_OP_ELWSUB(0, acc_to_dest, broadcast_type, addr_mod, 0));
-            tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
-            tmp.program(instrn_buffer);
-        } else if constexpr (eltwise_binary_type == ELWMUL) {
-            ckernel_template tmp(
-                high_fidelity ? NUM_FIDELITY_PHASES : outerloop,
-                innerloop,
-                TT_OP_ELWMUL(0, 0, broadcast_type, addr_mod, 0));
-            if constexpr (high_fidelity) {
-                tmp.set_last_inner_loop_instr(
-                    TT_OP_ELWMUL(0, 0, broadcast_type, ADDR_MOD_2, 0));  // Incr fidelity last inst of inner loop
-                tmp.set_last_outer_loop_instr(TT_OP_ELWMUL(p_setrwc::CLR_AB, 0, broadcast_type, ADDR_MOD_3, 0));
-            } else {
+            if (num_faces == 4 && broadcast_type == p_elwise::SRCB_NO_BCAST && binary_reuse_dest == EltwiseBinaryReuseDestType::NONE) {
+                ckernel_template tmp(1, outerloop*innerloop, TT_OP_ELWADD(0, acc_to_dest, broadcast_type, addr_mod, 0));
                 tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
+            } else {
+                ckernel_template tmp(outerloop, innerloop, TT_OP_ELWADD(0, acc_to_dest, broadcast_type, addr_mod, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
             }
-            tmp.program(instrn_buffer);
+        } else if constexpr (eltwise_binary_type == ELWSUB) {
+            if (num_faces == 4 && broadcast_type == p_elwise::SRCB_NO_BCAST && binary_reuse_dest == EltwiseBinaryReuseDestType::NONE) {
+                ckernel_template tmp(1, outerloop*innerloop, TT_OP_ELWSUB(0, acc_to_dest, broadcast_type, addr_mod, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
+            } else {
+                ckernel_template tmp(outerloop, innerloop, TT_OP_ELWSUB(0, acc_to_dest, broadcast_type, addr_mod, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
+            }
+        } else if constexpr (eltwise_binary_type == ELWMUL) {
+            if (num_faces == 4 && broadcast_type == p_elwise::SRCB_NO_BCAST && binary_reuse_dest == EltwiseBinaryReuseDestType::NONE){
+                ckernel_template tmp(
+                    high_fidelity ? NUM_FIDELITY_PHASES : 1,
+                    outerloop*innerloop,
+                    TT_OP_ELWMUL(0, 0, broadcast_type, addr_mod, 0));
+                if constexpr (high_fidelity) {
+                    tmp.set_last_inner_loop_instr(
+                        TT_OP_ELWMUL(0, 0, broadcast_type, ADDR_MOD_2, 0));  // Incr fidelity last inst of inner loop
+                    tmp.set_last_outer_loop_instr(TT_OP_ELWMUL(p_setrwc::CLR_AB, 0, broadcast_type, ADDR_MOD_3, 0));
+                } else {
+                    tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                }
+                tmp.program(instrn_buffer);
+            } else {
+                ckernel_template tmp(
+                    high_fidelity ? NUM_FIDELITY_PHASES : outerloop,
+                    innerloop,
+                    TT_OP_ELWMUL(0, 0, broadcast_type, addr_mod, 0));
+                if constexpr (high_fidelity) {
+                    tmp.set_last_inner_loop_instr(
+                        TT_OP_ELWMUL(0, 0, broadcast_type, ADDR_MOD_2, 0));  // Incr fidelity last inst of inner loop
+                    tmp.set_last_outer_loop_instr(TT_OP_ELWMUL(p_setrwc::CLR_AB, 0, broadcast_type, ADDR_MOD_3, 0));
+                } else {
+                    tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, p_setrwc::CR_AB, 0, 0, 0, p_setrwc::SET_AB));
+                }
+                tmp.program(instrn_buffer);
+            }
         }
     }
 }
