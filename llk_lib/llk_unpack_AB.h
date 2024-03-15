@@ -62,13 +62,19 @@ inline void _llk_unpack_AB_mop_config_(const bool transpose_of_faces=false, cons
             tmp.set_end_op(srca_set_z);
             tmp.program(instrn_buffer);
         } else {
-            constexpr uint32_t outerloop = 1;
-            const uint32_t innerloop = num_faces;
-            ckernel_template tmp(outerloop, innerloop, unpack_srca, unpack_srcb);
-            tmp.program(instrn_buffer);
+            if (num_faces == 4) {
+                constexpr uint32_t outerloop = 1;
+                const uint32_t innerloop = 1;
+                ckernel_template tmp(outerloop, innerloop, unpack_srca, unpack_srcb);
+                tmp.program(instrn_buffer);
+            } else {
+                constexpr uint32_t outerloop = 1;
+                const uint32_t innerloop = num_faces;
+                ckernel_template tmp(outerloop, innerloop, unpack_srca, unpack_srcb);
+                tmp.program(instrn_buffer);
+            }
         }
     }
-
 }
 
 template <bool is_fp32_dest_acc_en = false, StochRndType stoch_rnd_mode = StochRndType::None>
@@ -94,8 +100,13 @@ inline void _llk_unpack_AB_init_(const std::uint32_t face_r_dim=FACE_R_DIM, cons
 
     cfg_reg_rmw_tensix<THCON_SEC0_REG2_Haloize_mode_RMW>(transpose); // transpose within the face
 
-    constexpr std::uint32_t UNP_SEL = p_setadc::UNP_AB;
-    config_unpacker_x_end<UNP_SEL>(face_r_dim);
+    if (num_faces == 4 && !transpose) {
+        const uint32_t unpAB_x_end = num_faces*face_r_dim*FACE_C_DIM-1;
+        TT_SETADCXX(p_setadc::UNP_AB, unpAB_x_end, 0x0);
+    } else {
+        constexpr std::uint32_t UNP_SEL = p_setadc::UNP_AB;
+        config_unpacker_x_end<UNP_SEL>(face_r_dim);
+    }
 
     _llk_unpack_AB_mop_config_<BType>(transpose>0, num_faces, narrow_tile); // transpose of faces 0,2,1,3
 }
