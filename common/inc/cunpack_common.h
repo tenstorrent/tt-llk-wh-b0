@@ -313,7 +313,9 @@ namespace ckernel::unpacker
 
       for (uint i=0; i<CONFIG_SIZE; i++) cfg[THCON_SEC1_REG2_Out_data_format_ADDR32+i]=config.val[i];
 
-      uint unpA_x_end = (unpA_face_r_dim == 0) ? 1 : (unpA_face_r_dim << 4) - 1;
+      uint unpA_x_end = (unpA_face_r_dim == 0) ? 1 :
+                        (unpA_num_faces == 4 && !transpose_xy_srca_en && unpA_face_r_dim == FACE_R_DIM) ? (unpA_face_r_dim << 6) - 1 :
+                        (unpA_face_r_dim << 4) - 1;
       TTI_SETADCXX(p_setadc::UNP_A, unpA_x_end, 0x0);
       TTI_SETADCXX(p_setadc::UNP_B, (unpB_face_r_dim << 4)-1, 0x0);
 

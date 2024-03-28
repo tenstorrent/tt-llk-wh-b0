@@ -127,9 +127,15 @@ inline void eltwise_unary_configure_mop(uint rows_per_inst, uint total_rows, con
             tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_AB));
             tmp.program(instrn_buffer);
         } else {
-            ckernel_template tmp(outerloop, innerloop, TT_OP_MOVA2D(0, 0, ADDR_MOD_2, p_mova2d::MOV_8_ROWS, 0));
-            tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_AB));
-            tmp.program(instrn_buffer);
+            if (total_rows == 16 && num_faces == 4) {
+                ckernel_template tmp(1, outerloop*innerloop, TT_OP_MOVA2D(0, 0, ADDR_MOD_2, p_mova2d::MOV_8_ROWS, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
+            } else {
+                ckernel_template tmp(outerloop, innerloop, TT_OP_MOVA2D(0, 0, ADDR_MOD_2, p_mova2d::MOV_8_ROWS, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_AB));
+                tmp.program(instrn_buffer);
+            }
         }
         
     } else if constexpr (type == B2D) {
@@ -168,9 +174,15 @@ inline void eltwise_unary_configure_mop(uint rows_per_inst, uint total_rows, con
             tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_B, p_setrwc::CR_B, 0, 0, 0, p_setrwc::SET_B));
             tmp.program(instrn_buffer);
         } else {
-            ckernel_template tmp(outerloop, innerloop, TT_OP_MOVB2D(0, 0, addr_mod, rows_per_inst, 0));
-            tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_B, p_setrwc::CR_B, 0, 0, 0, p_setrwc::SET_B));
-            tmp.program(instrn_buffer);
+            if (total_rows == 16 && num_faces == 4) {
+                ckernel_template tmp(1, outerloop*innerloop, TT_OP_MOVB2D(0, 0, addr_mod, rows_per_inst, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_B, p_setrwc::CR_B, 0, 0, 0, p_setrwc::SET_B));
+                tmp.program(instrn_buffer);
+            } else {
+                ckernel_template tmp(outerloop, innerloop, TT_OP_MOVB2D(0, 0, addr_mod, rows_per_inst, 0));
+                tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_B, p_setrwc::CR_B, 0, 0, 0, p_setrwc::SET_B));
+                tmp.program(instrn_buffer);
+            }
         }
     }
 }
