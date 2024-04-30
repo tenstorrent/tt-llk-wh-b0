@@ -20,7 +20,7 @@ inline void _llk_unpack_AB_matmul_mop_config_(const bool transpose, const std::u
     // in1/inB - loaded to SrcA
 
     const bool reuse_a = ct_dim >= rt_dim;
-    const std::uint32_t replay_buf_prog_len = (reuse_a && unpA_partial_face) ? 16 : ((!reuse_a && unpB_partial_face) ? 16 : 10);
+    const std::uint32_t replay_buf_prog_len = (reuse_a && unpA_partial_face) ? 16 : ((!reuse_a && unpB_partial_face) ? 16 : 12);
     const std::uint32_t replay_buf_run_len  = replay_buf_prog_len/2;
 
     if (reuse_a) {
@@ -30,6 +30,7 @@ inline void _llk_unpack_AB_matmul_mop_config_(const bool transpose, const std::u
         #else
             static_assert(kernel_broadcast_b<=1, "kernel_broadcast>1 on matmul input 1 is not supported with reuse enabled!");
             TT_REPLAY(0, replay_buf_prog_len, 0, 1);
+            TTI_STALLWAIT(p_stall::STALL_UNPACK, p_stall::UNPACK0);
             if (unpA_partial_face) {
                 TTI_UNPACR_NOP(SrcA, p_unpacr_nop::UNP_ZEROSRC);
                 TTI_UNPACR(SrcA, 0b00010001, 0, 0, 0, 1 /*Set OvrdThreadId*/, 0 /*Set Dvalid*/, p_unpacr::RAREFYB_DISABLE, 0, 0 /* Set ContextIdInc */, 0, 0, 1);
@@ -48,6 +49,7 @@ inline void _llk_unpack_AB_matmul_mop_config_(const bool transpose, const std::u
                 TTI_REG2FLOP(1,0,0,0,THCON_SEC0_REG3_Base_address_ADDR32-THCON_CFGREG_BASE_ADDR32, p_gpr_unpack::TMP0);
             }
             TTI_NOP;
+            TTI_STALLWAIT(p_stall::STALL_UNPACK, p_stall::UNPACK0);
             if (unpA_partial_face) {
                 TTI_UNPACR_NOP(SrcA, p_unpacr_nop::UNP_ZEROSRC);
                 TTI_UNPACR(SrcA, 0b00010001, 0, 0, 0, 1 /*Set OvrdThreadId*/, 0 /*Set Dvalid*/, p_unpacr::RAREFYB_DISABLE, 0, 0 /* Set ContextIdInc */, 0, 0, 1);
