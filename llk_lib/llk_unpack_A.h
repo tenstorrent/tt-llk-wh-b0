@@ -127,11 +127,19 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
                 }
                 tmp.program(instrn_buffer);
             } else {
-                const uint32_t outerloop = num_faces;
-                constexpr uint32_t innerloop = 1;
-                ckernel_template tmp(outerloop, innerloop, unpack_srcb_zerosrc, unpack_srcb_set_dvalid);
-                tmp.set_start_op(unpack_srca);
-                tmp.program(instrn_buffer);
+                if (num_faces == 4) {
+                    const uint32_t outerloop = 1;
+                    constexpr uint32_t innerloop = 1;
+                    ckernel_template tmp(outerloop, innerloop, unpack_srcb_zerosrc, unpack_srcb_set_dvalid);
+                    tmp.set_start_op(unpack_srca);
+                    tmp.program(instrn_buffer);
+                } else {
+                    const uint32_t outerloop = num_faces;
+                    constexpr uint32_t innerloop = 1;
+                    ckernel_template tmp(outerloop, innerloop, unpack_srcb_zerosrc, unpack_srcb_set_dvalid);
+                    tmp.set_start_op(unpack_srca);
+                    tmp.program(instrn_buffer);
+                }
             }
         }
     }
@@ -158,7 +166,14 @@ inline void _llk_unpack_A_hw_configure_(const std::uint32_t unpack_src_format, c
 template <BroadcastType BType = BroadcastType::NONE, bool acc_to_dest = false, EltwiseBinaryReuseDestType binary_reuse_dest = EltwiseBinaryReuseDestType::NONE, bool unpack_to_dest = false>
 inline void _llk_unpack_A_init_(const std::uint32_t transpose_of_faces=0, const std::uint32_t within_face_16x16_transpose=0, const std::uint32_t face_r_dim = FACE_R_DIM, const std::uint32_t num_faces = 4, const std::uint32_t unpack_src_format = 0, const std::uint32_t unpack_dst_format = 0) {
     constexpr std::uint32_t UNP_SEL = (BType == BroadcastType::NONE) ? p_setadc::UNP_A : p_setadc::UNP_B;
-    config_unpacker_x_end<UNP_SEL>(face_r_dim);
+
+    if (num_faces == 4 && !transpose_of_faces && !within_face_16x16_transpose && !acc_to_dest) {
+        const uint32_t unpSEL_x_end = num_faces*face_r_dim*FACE_C_DIM-1;
+        TT_SETADCXX(UNP_SEL, unpSEL_x_end, 0x0);
+    } else {
+        config_unpacker_x_end<UNP_SEL>(face_r_dim);
+    }
+
     _llk_unpack_A_mop_config_<BType, acc_to_dest, binary_reuse_dest, unpack_to_dest>(transpose_of_faces>0, num_faces, unpack_src_format, unpack_dst_format);
 }
 
