@@ -22,3 +22,7 @@ extern uint32_t __local_mem_rodata_end_addr[];
 extern uint32_t __firmware_start[];
 
 extern int32_t topk_replay_init;
+
+extern uint32_t my_noc_x;
+extern uint32_t my_noc_y;
+extern uint32_t tiles_proc_delay;
