@@ -562,9 +562,11 @@ inline void init_prng_seed(const uint seed)
     cfg[PRNG_SEED_Seed_Val_ADDR32] = seed;
 
     // TODO: ckernel::wait does not work properly. Use ckernel::wait when fixed.
-    for(int i = 0; i < 600; i++) {
-	    TTI_SFPNOP;
-    }
+    // for(int i = 0; i < 600; i++) {
+    //	    TTI_SFPNOP;
+    // }
+    
+    ckernel::wait(10000);
 }
 
 }
