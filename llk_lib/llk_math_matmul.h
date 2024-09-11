@@ -16,6 +16,26 @@
 
 using namespace ckernel;
 
+inline __attribute__ ((__always_inline__)) void apply_throttle() {
+#ifdef MM_THROTTLE_COMPUTE
+    
+    #ifdef MM_THROTTLE_COMPUTE_NUM_COUNTS
+    constexpr uint num_nops = MM_THROTTLE_COMPUTE_NOP_COUNTS;
+    constexpr uint num_stallwaits = MM_THROTTLE_COMPUTE_STALLWAIT;
+    #else
+    constexpr uint num_nops = 0;
+    constexpr uint num_stallwaits = 0;
+    #endif
+    
+    if constexpr (num_stallwaits) {
+        TTI_STALLWAIT(p_stall::STALL_THREAD, p_stall::MATH);
+    }
+    for (uint i=0; i<num_nops; i++) {
+        TTI_NOP;
+    }
+#endif
+}
+
 template <int MATH_FIDELITY_DESC, DstTileFaceLayout FaceLayout=DstTileFaceLayout::ColMajor>
 inline void matmul_configure_addrmod(const bool transpose, const std::uint32_t ct_dim, const std::uint32_t rt_dim, const std::uint32_t kt_dim, const std::uint32_t in0_tile_r_dim = TILE_R_DIM, const std::uint32_t in0_tile_c_dim = TILE_C_DIM, const std::uint32_t in1_tile_r_dim = TILE_R_DIM, const std::uint32_t in1_tile_c_dim = TILE_C_DIM, const bool partial_face = false) {
 
@@ -391,6 +411,7 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
 
             if  (t_dim == 1) {
                 ckernel_template::run(instrn_buffer);
+                apply_throttle();
 
                 // Done with reuse. Clear srcA or srcB valid
                 if(rut == (rut_dim-1)) {
@@ -402,6 +423,7 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
                 }
             } else {
                 ckernel_template::run(instrn_buffer);
+                apply_throttle();
 
                 if ((t+1)<t_dim) {
 
@@ -427,6 +449,7 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
 
                     math::set_dst_write_addr<DstTileLayout::Default, DstTileShape::Tile32x32>(dst_index+(reuse_a ? ct_dim*(t+1)+rut : t+1+rut*ct_dim));
                     ckernel_template::run(instrn_buffer);
+                    apply_throttle();
                 }
 
                 if (reuse_a) {
