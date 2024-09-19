@@ -16,7 +16,7 @@ using namespace ckernel::math;
 
 template <bool untilize_en=false, bool row_pool=false>
 inline void _llk_math_hw_configure_(const std::uint32_t srca_data_format, const std::uint32_t srcb_data_format) {
-    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH);
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH | p_stall::WAIT_SFPU);
     uint exp_width = ((uint)srca_data_format>>2)&0x1; //0=5-bit, 1=8-bit
     uint int8_math_enabled = ((uint)(srca_data_format & 0xF) == (uint)DataFormat::Int8) ||
                              ((uint)(srcb_data_format & 0xF) == (uint)DataFormat::Int8) ||
@@ -129,7 +129,7 @@ inline void _llk_math_debug_dump_seek_(std::uint8_t offset) {
 }
 
 inline void _llk_math_reconfig_data_format_srca_(const std::uint32_t srca_data_format) {
-    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH);
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH | p_stall::WAIT_SFPU);
     uint int8_math_enabled = ((uint)(srca_data_format & 0xF) == (uint)DataFormat::Int8) ||
                              ((uint)srca_data_format == (uint)DataFormat::Int32);
     uint config_data = (srca_data_format << ALU_FORMAT_SPEC_REG0_SrcA_SHAMT) | (int8_math_enabled << ALU_ACC_CTRL_INT8_math_enabled_SHAMT);
@@ -138,7 +138,7 @@ inline void _llk_math_reconfig_data_format_srca_(const std::uint32_t srca_data_f
 }
 
 inline void _llk_math_reconfig_data_format_srcb_(const std::uint32_t srcb_data_format) {
-    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH);
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH | p_stall::WAIT_SFPU);
     uint int8_math_enabled = ((uint)(srcb_data_format & 0xF) == (uint)DataFormat::Int8) ||
                              ((uint)srcb_data_format == (uint)DataFormat::Int32);
     uint config_data = (srcb_data_format << ALU_FORMAT_SPEC_REG1_SrcB_SHAMT) | (int8_math_enabled << ALU_ACC_CTRL_INT8_math_enabled_SHAMT);
@@ -147,7 +147,7 @@ inline void _llk_math_reconfig_data_format_srcb_(const std::uint32_t srcb_data_f
 }
 
 inline void _llk_math_reconfig_data_format_(const std::uint32_t srca_data_format, const std::uint32_t srcb_data_format) {
-    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH);
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::MATH | p_stall::WAIT_SFPU);
     uint int8_math_enabled = ((uint)(srca_data_format & 0xF) == (uint)DataFormat::Int8) ||
                              ((uint)(srcb_data_format & 0xF) == (uint)DataFormat::Int8) ||
                              ((uint)srca_data_format == (uint)DataFormat::Int32) ||
