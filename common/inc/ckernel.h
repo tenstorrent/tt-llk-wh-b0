@@ -58,6 +58,12 @@
 
 #include <cstdint>
 
+namespace ckernel
+{
+volatile extern uint32_t inst_trace[1024];
+volatile extern uint32_t inst_trace_ptr;
+}
+
 #include "ckernel_include.h"
 #include "tensix.h"
 #include "fw_debug.h"
