@@ -290,5 +290,23 @@ inline void _llk_pack_reduce_mask_clear_() {
     TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_0_row_set_mapping_0_ADDR32);
     TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_1_row_set_mapping_0_ADDR32);
 
+    // Clear out packer configuration for reduce
+    TTI_WRCFG(p_gpr_pack::TMP0,  p_cfg::WRCFG_32b, PCK_EDGE_OFFSET_SEC0_mask_ADDR32);
+    TTI_WRCFG(p_gpr_pack::TMP0,  p_cfg::WRCFG_32b, PCK_EDGE_OFFSET_SEC1_mask_ADDR32);
+
+    // All mappings point to PCK_EDGE_OFFSET_SEC0_mask_ADDR32
+    TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_0_row_set_mapping_0_ADDR32);
+    TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_1_row_set_mapping_0_ADDR32);
+
+    // Clear out packer configuration for reduce
+    TTI_WRCFG(p_gpr_pack::TMP0,  p_cfg::WRCFG_32b, PCK_EDGE_OFFSET_SEC0_mask_ADDR32);
+    TTI_WRCFG(p_gpr_pack::TMP0,  p_cfg::WRCFG_32b, PCK_EDGE_OFFSET_SEC1_mask_ADDR32);
+
+    // All mappings point to PCK_EDGE_OFFSET_SEC0_mask_ADDR32
+    TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_0_row_set_mapping_0_ADDR32);
+    TTI_WRCFG(p_gpr::ZERO,  p_cfg::WRCFG_32b, TILE_ROW_SET_MAPPING_1_row_set_mapping_0_ADDR32);
+
+
+
     TTI_NOP; TTI_NOP;
 }
