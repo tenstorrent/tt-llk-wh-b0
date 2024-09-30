@@ -12,110 +12,114 @@
 
 using namespace sfpi;
 
-namespace ckernel
-{
-namespace sfpu
-{
+#define FRAC_2_PI 0.63661975F
 
 template <bool APPROXIMATION_MODE>
-sfpi_inline vFloat _sfpu_sine_maclaurin_series_(vFloat val)
-{
-    // Good for [-pi:pi]
-    // Mclauren series = x - x^3/3! + x^5/5! - x^7/7! + x^9/9! - x^11/11!
-    vFloat tmp = val;
-    // x
-    vFloat output = tmp;
-    // x^3/3!
-    tmp = tmp*val*val;
-    output += -0.166666666*tmp;
-    // x^5/5!
-    tmp = tmp*val*val;
-    output +=  0.0083333333*tmp;
-    // x^7/7!
-    tmp = tmp*val*val;
-    output += -0.0001984126*tmp;
-    if constexpr (not APPROXIMATION_MODE) {
-        // x^9/9!
-        tmp = tmp*val*val;
-        output +=  0.0000027557*tmp;
-        // x^11/11!
-        tmp = tmp*val*val;
-        output += -0.00000002505*tmp;
-    }
+static vFloat sfpu_sinpi_2(vFloat x);
 
-    // Write out output
-    return output;
+// Approximate sin(π/2 * x) in [-0.5, 0.5] for fp32
+// Maximum relative error: 3.41e-8
+template <>
+sfpi_inline vFloat sfpu_sinpi_2<false>(vFloat x)
+{
+    vFloat xx = x * x;
+    return x * (((-0.00462859F
+        * xx + 0.079691978F)
+        * xx - 0.645965F)
+        * xx + 1.5707964F);
 }
+
+// Approximate sin(π/2 * x) in [-0.5, 0.5] for fp16a
+// Maximum relative error: 4.09e-4
+template <>
+sfpi_inline vFloat sfpu_sinpi_2<true>(vFloat x)
+{
+    vFloat xx = x * x;
+    return (-0.6260741F * xx + 1.5701545F) * x;
+}
+
 template <bool APPROXIMATION_MODE>
-sfpi_inline vFloat _sfpu_cosine_maclaurin_series_(vFloat val)
-{
-    // Good for [-pi:pi]
-    // Mclauren series = 1 - x^2/2! + x^4/4! - x^6/6! + x^8/8! - x^10/10! + x^12/12!
-    // 1
-    vFloat output = 1.0f;
-    // x^2/2!
-    vFloat tmp = val*val;
-    output += -0.5*tmp;
-    // x^4/4!
-    tmp = tmp*val*val;
-    output +=  0.0416666666*tmp;
-    // x^6/6!
-    tmp = tmp*val*val;
-    output += -0.0013888888*tmp;
-    if constexpr (not APPROXIMATION_MODE) {
-        // x^8/8!
-        tmp = tmp*val*val;
-        output +=  0.0000248015*tmp;
-        // x^10/10!
-        tmp = tmp*val*val;
-        output += -0.0000002755*tmp;
-    }
+static vFloat sfpu_cospi_2(vFloat x);
 
-    // Write out output
-    return output;
+// Approximate cos(π/2 * x) in [-0.5, 0.5] for fp32
+// Maximum relative error: 8.25e-8
+template <>
+sfpi_inline vFloat sfpu_cospi_2<false>(vFloat x)
+{
+    x *= x;
+    return ((-0.020381697F
+        * x + 0.25358754F)
+        * x - 1.2336957F)
+        * x + 0.99999994F;
 }
+
+// Approximate cos(π/2 * x) in [-0.5, 0.5] for fp16a
+// Maximum relative error: 1.18e-5
+template <>
+sfpi_inline vFloat sfpu_cospi_2<true>(vFloat x)
+{
+    x *= x;
+    return (0.24572742F * x - 1.2329242F) * x + 0.9999882F;
+}
+
+namespace ckernel {
+namespace sfpu {
+
 template <bool APPROXIMATION_MODE, int ITERATIONS>
-inline void _calculate_sine_(const int iterations)
+void _calculate_sine_(const int iterations)
 {
     // SFPU microcode
     for (int d = 0; d < iterations; d++)
     {
         vFloat v = dst_reg[0];
-        v = 0.318309886183791f*v; // *1/pi to get number of pi rads.
-        vInt whole_v = float_to_int16(v);
-        vFloat whole_v_float = int32_to_float(whole_v, 0);
-        v = v - whole_v_float;
-        v *= 3.141592653589793f; // fractional * pi to get it in [-pi:pi]
-        v = _sfpu_sine_maclaurin_series_<APPROXIMATION_MODE>(v);
-        whole_v = whole_v & 0x1;
-        v_if(whole_v != 0) {
-            // odd so flip the sign
-            v *= -1;
+        v *= FRAC_2_PI;
+
+        vInt q = float_to_int16(v);
+        v -= int32_to_float(q, 0);
+
+        v_if ((q & 1) == 1) {
+            v = sfpu_cospi_2<APPROXIMATION_MODE>(v);
+        }
+        v_else {
+            v = sfpu_sinpi_2<APPROXIMATION_MODE>(v);
         }
         v_endif;
+
+        v_if ((q & 2) == 2) {
+            v = -v;
+        }
+        v_endif;
+
         dst_reg[0] = v;
         dst_reg++;
     }
 }
+
 template <bool APPROXIMATION_MODE, int ITERATIONS>
-inline void _calculate_cosine_(const int iterations)
+void _calculate_cosine_(const int iterations)
 {
     // SFPU microcode
     for (int d = 0; d < iterations; d++)
     {
         vFloat v = dst_reg[0];
-        v = 0.318309886183791f*v; // *1/pi to get number of pi rads.
-        vInt whole_v = float_to_int16(v);
-        vFloat whole_v_float = int32_to_float(whole_v, 0);
-        v = v - whole_v_float;
-        v *= 3.141592653589793f; // fractional * pi to get it in [-pi:pi]
-        v = _sfpu_cosine_maclaurin_series_<APPROXIMATION_MODE>(v);
-        whole_v = whole_v & 0x1;
-        v_if(whole_v != 0) {
-            // odd so flip the sign
-            v *= -1;
+        v *= FRAC_2_PI;
+
+        vInt q = float_to_int16(v);
+        v -= int32_to_float(q, 0);
+
+        v_if ((q & 1) == 1) {
+            v = sfpu_sinpi_2<APPROXIMATION_MODE>(v);
+        }
+        v_else {
+            v = sfpu_cospi_2<APPROXIMATION_MODE>(v);
         }
         v_endif;
+
+        v_if (((q + 1) & 2) == 2) {
+            v = -v;
+        }
+        v_endif;
+
         dst_reg[0] = v;
         dst_reg++;
     }
