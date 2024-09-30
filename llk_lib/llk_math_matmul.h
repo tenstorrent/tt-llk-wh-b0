@@ -19,7 +19,7 @@ using namespace ckernel;
 inline __attribute__ ((__always_inline__)) void apply_throttle() {
 #ifdef MM_THROTTLE_COMPUTE
     
-    #ifdef MM_THROTTLE_COMPUTE_NUM_COUNTS
+    #ifdef MM_THROTTLE_COMPUTE_NOP_COUNTS
     constexpr uint num_nops = MM_THROTTLE_COMPUTE_NOP_COUNTS;
     constexpr uint num_stallwaits = MM_THROTTLE_COMPUTE_STALLWAIT;
     #else
