@@ -12,7 +12,7 @@
 
 using namespace sfpi;
 
-#define FRAC_2_PI 0.63661975F
+static const float FRAC_2_PI = 0.63661975F;
 
 template <bool APPROXIMATION_MODE>
 static vFloat sfpu_sinpi_2(vFloat x);
