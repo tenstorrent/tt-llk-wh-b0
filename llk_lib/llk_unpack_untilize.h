@@ -68,6 +68,7 @@ inline void _llk_unpack_untilize_hw_configure_(const std::uint32_t unpack_src_fo
 }
 
 inline void _llk_unpack_untilize_init_(const std::uint32_t unpack_dst_format, const std::uint32_t tile_size, const std::uint32_t face_r_dim = FACE_R_DIM, const std::uint32_t num_faces = 4) {
+    cfg_reg_rmw_tensix<THCON_SEC0_REG2_Haloize_mode_RMW>(0);
 
     const std::uint32_t unpA_ch1_x_stride = (unpack_dst_format&0x3) == (std::uint32_t) DataFormat::Float32 ? 4 : (unpack_dst_format&0x3) == (std::uint32_t) DataFormat::Float16 ? 2 : 1;
     const std::uint32_t unpA_ch1_y_stride = FACE_R_DIM*unpA_ch1_x_stride;
