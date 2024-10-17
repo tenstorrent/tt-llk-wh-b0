@@ -17,7 +17,7 @@ namespace ckernel
 namespace sfpu
 {
 
-template <bool APPROXIMATION_MODE, int ITERATIONS>
+template <bool APPROXIMATION_MODE>
 inline void _calculate_lrelu_(const int iterations, uint slope)
 {
     // SFPU microcode
