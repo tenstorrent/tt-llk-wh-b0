@@ -17,4 +17,3 @@ pip install --upgrade pip
 # needed packages
 pip install -U pytest
 pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-pip install ieee754
