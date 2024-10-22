@@ -1,4 +1,4 @@
-TOOL_PATH?=../third_party/sfpi/compiler/bin
+TOOL_PATH?=sfpi-rel/compiler/bin
 BUILD_DIR ?=build
 
 # Tool paths
@@ -11,8 +11,8 @@ READELF=$(TOOL_PATH)/riscv32-unknown-elf-readelf
 OPTIONS_ALL=-O3 -march=rv32imw -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
 OPTIONS_COMPILE=-fno-use-cxa-atexit -fno-exceptions -Wall -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DARCH_WORMHOLE -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
 OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -L../dbd/riscv-src -Wl,--trace
-INCLUDES = -I../third_party/tt-llk-wh-b0/llk_lib -I../third_party/tt-llk-wh-b0/common/inc -I../third_party/tt-llk-wh-b0/common/inc/sfpu
-INCLUDES += -I../third_party/firmware/riscv/common -I../third_party/firmware/riscv/wormhole -I../third_party/firmware/riscv/wormhole/wormhole_b0_defines -I../third_party/firmware/riscv/wormhole/noc -I../third_party/sfpi/include
+INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
+INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi-rel/include
 
 MINUS_D:="-D"
 SPACE:= " "
@@ -23,7 +23,7 @@ OPTIONS_COMPILE+=$(INCLUDES)
 OPTIONS_ALL+=-m$(machine)
 
 # Define project paths
-RISCV_SOURCE=../dbd/riscv-src
+RISCV_SOURCE=helpers
 OUTPUT_ELFS = $(BUILD_DIR)/elf
 
 # Define targets

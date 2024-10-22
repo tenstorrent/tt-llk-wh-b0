@@ -47,7 +47,7 @@ void run_kernel()
 void run_kernel()
 {
     _llk_math_eltwise_binary_init_<ELTWISE_BINARY_OP, BroadcastType::NONE>(4, 0, 0);
-    _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE>(4, 0, true);
+    _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE,DstSync::SyncTile16>(4, 0, true);
     set_math_semaphores();
 }
 

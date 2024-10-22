@@ -18,6 +18,7 @@ namespace ckernel{
 	volatile uint tt_reg_ptr *instrn_buffer = reinterpret_cast<volatile uint *>(INSTRN_BUF_BASE);
 	volatile uint tt_reg_ptr *regfile = reinterpret_cast<volatile uint *>(REGFILE_BASE);
 	volatile uint tt_l1_ptr * trisc_l1_mailbox = reinterpret_cast<volatile uint tt_l1_ptr *>(0x1d000);
+	uint32_t math_sync_tile_dst_index = 0;
 
 	volatile uint32_t inst_trace_ptr  __attribute__((section(".init"))) = 0;
 	volatile uint32_t inst_trace[1024]  __attribute__((section(".init"))) = {0};
