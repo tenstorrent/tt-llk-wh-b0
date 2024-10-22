@@ -51,11 +51,11 @@ $(OUTPUT_ELFS): $(BUILD_DIR)
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc2.ld -T$(RISCV_SOURCE)/sections.ld -o $@
 
 #compiling _test.cc to .o
-$(BUILD_DIR)/$(testname)_unpack.o: tests/$(testname).cc
+$(BUILD_DIR)/$(testname)_unpack.o: sources/$(testname).cc
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_UNPACK -c -o $@ $<
-$(BUILD_DIR)/$(testname)_math.o: tests/$(testname).cc
+$(BUILD_DIR)/$(testname)_math.o: sources/$(testname).cc
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_MATH -c -o $@ $<
-$(BUILD_DIR)/$(testname)_pack.o: tests/$(testname).cc
+$(BUILD_DIR)/$(testname)_pack.o: sources/$(testname).cc
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_PACK -c -o $@ $<
 
 #compiling main for every TRISC core

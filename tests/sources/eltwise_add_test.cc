@@ -47,7 +47,7 @@ void run_kernel()
 void run_kernel()
 {
     _llk_math_eltwise_binary_init_<ELTWISE_BINARY_OP, BroadcastType::NONE>(4, 0, 0);
-    _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE,DstSync::SyncTile16>(4, 0, true);
+    _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE,DstSync::SyncFull>(4, 0, true);
     set_math_semaphores();
 }
 
@@ -67,7 +67,7 @@ void run_kernel()
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
     _llk_packer_wait_for_math_done_();
-    _llk_pack_(0, (std::uint32_t)buffer_Dest/16-1);
+    _llk_pack_<DstSync::SyncFull>(0, (std::uint32_t)buffer_Dest/16-1);
 }
 
 #endif
