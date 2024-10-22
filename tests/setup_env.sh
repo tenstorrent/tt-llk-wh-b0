@@ -16,17 +16,7 @@ fi
 # TODO: GET FIRMWARE
 
 # **************** DOWNLOAD & INSTALL DEBUDA ****************************
-# TODO: NEWEST DEBUDA WHEEL
-FILE_URL="https://github.com/tenstorrent/tt-debuda/releases/debuda-0.1.241015+dev.1fa63bf-cp310-cp310-linux_x86_64.whl"
-OUTPUT_DIR="./downloads"
-OUTPUT_FILE="${OUTPUT_DIR}/debuda-0.1.241015+dev.1fa63bf-cp310-cp310-linux_x86_64.whl"
-
-mkdir -p "$OUTPUT_DIR"
-curl -o "$OUTPUT_FILE" "$FILE_URL" || { echo "Failed to download Debuda."; exit 1; }
-echo "File downloaded successfully to $OUTPUT_FILE."
-
-pip install downloads/debuda-0.1.241016+dev.62b602b-cp310-cp310-linux_x86_64.whl || { echo "Failed to install Debuda."; exit 1; }
-
+pip install git+https://github.com/tenstorrent/tt-debuda.git
 # **************** SETUP PYTHON VENV **********************************
 
 sudo apt install -y python3.10-venv || { echo "Failed to install python3.10-venv."; exit 1; }
