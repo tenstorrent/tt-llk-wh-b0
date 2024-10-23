@@ -25,3 +25,6 @@ pip install --upgrade pip
 # needed packages
 pip install -U pytest
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu || { echo "Failed to install PyTorch packages."; exit 1; }
+
+# reset the board
+/home/software/syseng/wh/tt-smi -wr 0 

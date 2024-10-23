@@ -66,8 +66,8 @@ def generate_stimuli(stimuli_format):
 
 
 def generate_golden(operation, operand1, operand2, data_format):
-    tensor1_float = torch.tensor(operand1, dtype=torch.float32)
-    tensor2_float = torch.tensor(operand2, dtype=torch.float32)
+    tensor1_float = torch.tensor(operand1, dtype=format_dict[data_format])
+    tensor2_float = torch.tensor(operand2, dtype=format_dict[data_format])
 
     if operation == "elwadd":
         dest = tensor1_float + tensor2_float
@@ -151,7 +151,6 @@ def test_all(format, mathop, testname, machine):
         tolerance = 0.05
     else:
         tolerance = 0.3
-
 
     for i in range(128):
         assert abs(golden[i] - golden_form_L1[i]) <= tolerance, f"i = {i}, {golden[i]}, {golden_form_L1[i]}"
