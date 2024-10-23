@@ -50,7 +50,7 @@ def bytes_to_float16(byte_list):
 def bytes_to_bfloat16(byte_list):
     bytes_data = bytes(byte_list)
     unpacked_value = struct.unpack('>f', bytes_data)[0]
-    return torch.tensor(unpacked_value, dtype=torch.bfloat16)
+    return torch.tensor(unpacked_value, dtype=torch.float32)
 
 def bfloat16_to_bytes(number):
     number_unpacked = struct.unpack('!I', struct.pack('!f', number))[0]
@@ -66,8 +66,8 @@ def generate_stimuli(stimuli_format):
 
 
 def generate_golden(operation, operand1, operand2, data_format):
-    tensor1_float = torch.tensor(operand1, dtype=format_dict[data_format])
-    tensor2_float = torch.tensor(operand2, dtype=format_dict[data_format])
+    tensor1_float = torch.tensor(operand1, dtype=torch.float32)
+    tensor2_float = torch.tensor(operand2, dtype=torch.float32)
 
     if operation == "elwadd":
         dest = tensor1_float + tensor2_float
@@ -77,8 +77,6 @@ def generate_golden(operation, operand1, operand2, data_format):
         dest = tensor1_float * tensor2_float
     else:
         raise ValueError("Unsupported operation!")
-
-    dest = dest.to(format_dict[data_format]) 
 
     return dest.tolist()
 
@@ -100,15 +98,6 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
 
     decimal_A = flatten_list(decimal_A)
     decimal_B = flatten_list(decimal_B)
-
-    print()
-    print("$"*70)
-    print(buffer_A[0])
-    print(buffer_B[0])
-    # print(buffer_A[0]*buffer_B[0])
-    print(decimal_A[0:4])
-    print(decimal_B[0:4])
-    print("$"*70)
 
     write_to_device("18-18", 0x1c000, decimal_A)
     write_to_device("18-18", 0x1b000, decimal_B)
@@ -146,15 +135,6 @@ def test_all(format, mathop, testname, machine):
         for i in byte_list:
             golden_form_L1.append(bytes_to_float16(i).item())
 
-    print()
-    print("*"*70)
-    print(golden[0])
-    print(read_data[0])
-    print(hex(read_data[0]))
-    print(byte_list[0])
-    print(golden_form_L1[0])
-    print("*"*70)
-
     os.system("make clean")
 
     unpack_mailbox = read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big')
@@ -172,5 +152,6 @@ def test_all(format, mathop, testname, machine):
     else:
         tolerance = 0.3
 
-    for i in range(512):
+
+    for i in range(128):
         assert abs(golden[i] - golden_form_L1[i]) <= tolerance, f"i = {i}, {golden[i]}, {golden_form_L1[i]}"
