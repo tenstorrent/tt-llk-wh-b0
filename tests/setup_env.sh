@@ -13,8 +13,6 @@ else
     git submodule update --remote
 fi
 
-# TODO: GET FIRMWARE
-
 # **************** DOWNLOAD & INSTALL DEBUDA ****************************
 pip install git+https://github.com/tenstorrent/tt-debuda.git
 # **************** SETUP PYTHON VENV **********************************
