@@ -1,18 +1,7 @@
 #!/bin/bash
 
 # **************** DOWNLOAD & INSTALL SFPI ****************************
-SFPI_PATH="sfpi-rel" 
-FIRMWARE_PATH="firmware/riscv"
-
-# Check if the folder does not exist
-if [ ! -d "$SFPI_PATH" ]; then
-    git submodule add https://github.com/tenstorrent/sfpi-rel/
-else
-    echo "SFPI already installed."
-    git submodule init
-    git submodule update --remote
-fi
-
+git submodule update --init --recursive
 # **************** DOWNLOAD & INSTALL DEBUDA ****************************
 pip install git+https://github.com/tenstorrent/tt-debuda.git
 # **************** SETUP PYTHON VENV **********************************
