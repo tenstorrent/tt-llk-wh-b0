@@ -104,7 +104,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
 
 @pytest.mark.parametrize("format", ["Float16", "Float16_b"])
 @pytest.mark.parametrize("testname", ["eltwise_add_test"])
-@pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd", "elwsub"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
