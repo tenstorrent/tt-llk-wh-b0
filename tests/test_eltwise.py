@@ -72,7 +72,7 @@ def generate_golden(operation, operand1, operand2, data_format):
     if operation == "elwadd":
         dest = tensor1_float + tensor2_float
     elif operation == "elwsub":
-        dest = tensor2_float - tensor1_float
+        dest = tensor1_float - tensor2_float
     elif operation == "elwmul":
         dest = tensor1_float * tensor2_float
     else:
@@ -99,8 +99,8 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
     decimal_A = flatten_list(decimal_A)
     decimal_B = flatten_list(decimal_B)
 
-    write_to_device("18-18", 0x1c000, decimal_A)
-    write_to_device("18-18", 0x1b000, decimal_B)
+    write_to_device("18-18", 0x1b000, decimal_A)
+    write_to_device("18-18", 0x1c000, decimal_B)
 
 @pytest.mark.parametrize("format", ["Float16", "Float16_b"])
 @pytest.mark.parametrize("testname", ["eltwise_add_test"])
