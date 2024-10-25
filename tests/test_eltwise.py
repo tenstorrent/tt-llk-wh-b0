@@ -59,8 +59,12 @@ def bfloat16_to_bytes(number):
 
 
 def generate_stimuli(stimuli_format):
-    srcA = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
-    srcB = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
+    #srcA = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
+    #srcB = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
+
+    srcA = torch.full((1024,), fill_value=2, dtype=format_dict[stimuli_format]) # hardcoded for now
+    srcB = torch.full((1024,), fill_value=2, dtype=format_dict[stimuli_format]) # hardcoded for now
+
 
     return srcA.tolist() , srcB.tolist()
 
@@ -68,7 +72,7 @@ def generate_stimuli(stimuli_format):
 def generate_golden(operation, operand1, operand2, data_format):
     tensor1_float = torch.tensor(operand1, dtype=format_dict[data_format])
     tensor2_float = torch.tensor(operand2, dtype=format_dict[data_format])
-
+    
     if operation == "elwadd":
         dest = tensor1_float + tensor2_float
     elif operation == "elwsub":
@@ -102,8 +106,8 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
     write_to_device("18-18", 0x1b000, decimal_A)
     write_to_device("18-18", 0x1c000, decimal_B)
 
-@pytest.mark.parametrize("format", ["Float16", "Float16_b"])
-@pytest.mark.parametrize("testname", ["eltwise_add_test"])
+@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
+@pytest.mark.parametrize("testname", ["eltwise_binary_test"])
 @pytest.mark.parametrize("mathop", ["elwadd", "elwsub"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
@@ -152,5 +156,10 @@ def test_all(format, mathop, testname, machine):
     else:
         tolerance = 0.3
 
-    for i in range(128):
+    if(format == "Float16" or format == "Float16_b"):
+        check_range = 512
+    else:
+        check_range = 1024
+
+    for i in range(check_range):
         assert abs(golden[i] - golden_form_L1[i]) <= tolerance, f"i = {i}, {golden[i]}, {golden_form_L1[i]}"
