@@ -32,6 +32,7 @@ volatile uint32_t* buffer_B = (volatile uint32_t*)0x1c000;
 
 void run_kernel()
 {
+
     _llk_unpack_AB_hw_configure_(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT);
     _llk_unpack_AB_init_<>();
     _llk_unpack_AB_<>((std::uint32_t)buffer_A/16-1,(std::uint32_t)buffer_B/16-1);
@@ -59,10 +60,13 @@ void run_kernel()
 #include "llk_pack_common.h"
 #include "../helpers/params.h"
 
-//__attribute__((section(".text"))) uint32_t buffer_Dest[16 * 16 * 4];
 volatile uint32_t* buffer_Dest = (volatile uint32_t*)0x1a000;
 void run_kernel()
 {
+    for(int i = 0; i < 16*16*4; i++)
+    {
+        buffer_Dest[i] = 0;
+    }
     _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 16*16*4);
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
