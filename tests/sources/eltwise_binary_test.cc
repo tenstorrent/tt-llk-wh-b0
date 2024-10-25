@@ -63,9 +63,9 @@ void run_kernel()
 volatile uint32_t* buffer_Dest = (volatile uint32_t*)0x1a000;
 void run_kernel()
 {
-    for(int i = 0; i < 16*16*4; i++)
+    for(int i = 0; i < 16*16*2; i++)
     {
-        buffer_Dest[i] = 0;
+        buffer_Dest[i] = 0xdeadbeef;
     }
     _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 16*16*4);
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
