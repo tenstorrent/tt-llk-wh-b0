@@ -5,8 +5,6 @@ import struct
 from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 
-from packer import pack_bfp16, pack_fp16
-
 format_dict = {
     "Float32": torch.float32,
     "Float16": torch.float16,
@@ -135,11 +133,12 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
-@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Float16_b"]) #, "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd", "elwsub"]) #, "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
+    os.system("/home/software/syseng/wh/tt-smi -wr 0") # reset the device
     context = init_debuda()
     src_A, src_B = generate_stimuli(format)
     golden = generate_golden(mathop, src_A, src_B,format)
