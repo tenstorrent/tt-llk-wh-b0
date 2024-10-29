@@ -101,11 +101,11 @@ def pack_fp16(torch_tensor):
     return packed_bytes
 
 def generate_stimuli(stimuli_format):
-    #srcA = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
-    #srcB = torch.rand(32 * 32, dtype=format_dict[stimuli_format]) + 0.5
+    srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
+    srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
 
-    srcA = torch.arange(0,512,0.5, dtype=format_dict[stimuli_format])
-    srcB = torch.arange(0,512,0.5, dtype=format_dict[stimuli_format])
+    #srcA = torch.arange(0,512,0.5, dtype=format_dict[stimuli_format])
+    #srcB = torch.arange(0,512,0.5, dtype=format_dict[stimuli_format])
 
     return srcA, srcB
 
@@ -135,7 +135,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
 
 @pytest.mark.parametrize("format", ["Float16_b"]) #, "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwadd", "elwsub"]) #, "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwsub", "elwadd", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     os.system("/home/software/syseng/wh/tt-smi -wr 0") # reset the device
@@ -144,7 +144,7 @@ def test_all(format, mathop, testname, machine):
     golden = generate_golden(mathop, src_A, src_B,format)
     write_stimuli_to_l1(src_A, src_B,format,mathop)
 
-    make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
+    make_cmd = f"make format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
     os.system(make_cmd)
 
     for i in range(3):
@@ -183,6 +183,6 @@ def test_all(format, mathop, testname, machine):
     tolerance = 0.1
 
     for i in range(len(golden)):
-        read_bytes =  hex(read_words_from_device("18-18", 0x1a000 + i*4, word_count=1)[0])
+        read_word =  hex(read_words_from_device("18-18", 0x1a000 + (i//2)*4, word_count=1)[0])
         if(golden[i]!=0):
-            assert abs((res_from_L1[i]-golden[i])/golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_bytes}"
+            assert abs((res_from_L1[i]-golden[i])/golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"

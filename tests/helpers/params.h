@@ -20,6 +20,20 @@
 
 #ifdef LLK_TRISC_MATH
 
+    #ifdef FORMAT_FLOAT16_B
+        #define DATA_FORMAT (uint32_t)DataFormat::Float16_b
+    #endif
+    #ifdef FORMAT_FLOAT16
+        #define DATA_FORMAT (uint32_t)DataFormat::Float16
+    #endif
+    #ifdef FORMAT_FLOAT32
+        #define DATA_FORMAT (uint32_t)DataFormat::Float32
+    #endif
+    #ifdef FORMAT_INT32
+        #define DATA_FORMAT (uint32_t)DataFormat::Int32
+    #endif
+
+
     #ifdef ELTWISE_BINARY_ADD
         #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWADD
     #endif

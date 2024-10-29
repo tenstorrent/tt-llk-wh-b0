@@ -14,8 +14,8 @@ OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
 INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi-rel/include
 
-MINUS_D:="-D"
-SPACE:= " "
+MINUS_D:=-D
+SPACE:= 
 FORMAT_ARG:=$(MINUS_D)$(format)$(SPACE)
 MATHOP_ARG:=$(MINUS_D)$(mathop)$(SPACE)
 OPTIONS_COMPILE+=$(FORMAT_ARG) $(MATHOP_ARG)

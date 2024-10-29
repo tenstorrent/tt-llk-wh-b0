@@ -32,7 +32,6 @@ volatile uint32_t* buffer_B = (volatile uint32_t*)0x1c000;
 
 void run_kernel()
 {
-
     _llk_unpack_AB_hw_configure_(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT);
     _llk_unpack_AB_init_<>();
     _llk_unpack_AB_<>((std::uint32_t)buffer_A/16-1,(std::uint32_t)buffer_B/16-1);
@@ -42,12 +41,14 @@ void run_kernel()
 
 #ifdef LLK_TRISC_MATH
 
+#include "llk_math_common.h"
 #include "llk_math_eltwise_binary.h"
 #include "../helpers/params.h"
 
 void run_kernel()
 {
     _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
+    _llk_math_hw_configure_<false,false>(DATA_FORMAT,DATA_FORMAT);
     _llk_math_eltwise_binary_init_<ELTWISE_BINARY_OP, BroadcastType::NONE>(4, 0, 0);
     _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE,DstSync::SyncFull>(4, 0, true);
     set_math_semaphores();
