@@ -51,7 +51,7 @@ void run_kernel()
     _llk_math_hw_configure_<false,false>(DATA_FORMAT,DATA_FORMAT);
     _llk_math_eltwise_binary_init_<ELTWISE_BINARY_OP, BroadcastType::NONE>(4, 0, 0);
     _llk_math_eltwise_binary_<ELTWISE_BINARY_OP, BroadcastType::NONE,DstSync::SyncFull>(4, 0, true);
-    set_math_semaphores();
+    _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
 #endif 
@@ -65,7 +65,7 @@ void run_kernel()
 volatile uint32_t* buffer_Dest = (volatile uint32_t*)0x1a000;
 void run_kernel()
 {
-    for(int i = 0; i < 16*16*2; i++)
+    for(int i = 0; i < 16*16*4; i++)
     {
         buffer_Dest[i] = 0xdeadbeef;
     }
@@ -74,6 +74,7 @@ void run_kernel()
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
     _llk_packer_wait_for_math_done_();
     _llk_pack_<DstSync::SyncFull>(0, (std::uint32_t)buffer_Dest/16-1);
+    _llk_pack_dest_section_done_<DstSync::SyncFull,false>();
 }
 
 #endif

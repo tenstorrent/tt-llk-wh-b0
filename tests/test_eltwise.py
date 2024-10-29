@@ -138,7 +138,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format, mathop):
 @pytest.mark.parametrize("mathop", ["elwsub", "elwadd", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
-    os.system("/home/software/syseng/wh/tt-smi -wr 0") # reset the device
+    #os.system("/home/software/syseng/wh/tt-smi -wr 0") # reset the device
     context = init_debuda()
     src_A, src_B = generate_stimuli(format)
     golden = generate_golden(mathop, src_A, src_B,format)
