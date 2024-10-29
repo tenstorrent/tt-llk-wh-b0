@@ -17,7 +17,34 @@ INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmwar
 MINUS_D:=-D
 SPACE:= 
 FORMAT_ARG:=$(MINUS_D)$(format)$(SPACE)
-MATHOP_ARG:=$(MINUS_D)$(mathop)$(SPACE)
+
+ifeq ($(mathop),)
+    MATHOP_ARG =
+else
+	MATHOP_ARG:=$(MINUS_D)$(mathop)$(SPACE)
+endif
+
+# If test needs to run muliple consecutive operations it needs some additional
+# files to be linked to it
+ifeq ($(testname), multiple_ops_test)
+	MULTIPLE_OPS:=-DMULTIPLE_OPS
+	OPTIONS_UNPACK:=$(MINUS_D)KERN_CNT=$(unpack_kern_cnt)$(SPACE)
+	OPTIONS_UNPACK+=$(MINUS_D)KERNS=$(unpack_kerns)$(SPACE)
+	OPTIONS_MATH:=$(MINUS_D)KERN_CNT=$(math_kern_cnt)$(SPACE)
+	OPTIONS_MATH+=$(MINUS_D)KERNS=$(math_kerns)$(SPACE)
+	OPTIONS_PACK:=$(MINUS_D)KERN_CNT=$(pack_kern_cnt)$(SPACE)
+	OPTIONS_PACK+=$(MINUS_D)KERNS=$(pack_kerns)$(SPACE)
+    LINK_OBJECTS = $(BUILD_DIR)/unpack.o $(BUILD_DIR)/math.o $(BUILD_DIR)/pack.o
+
+else
+	MULTIPLE_OPS= 
+    LINK_OBJECTS= 
+	OPTIONS_UNPACK= 
+	OPTIONS_MATH= 
+	OPTIONS_PACK= 
+endif
+
+
 OPTIONS_COMPILE+=$(FORMAT_ARG) $(MATHOP_ARG)
 OPTIONS_COMPILE+=$(INCLUDES)
 OPTIONS_ALL+=-m$(machine)
@@ -43,28 +70,36 @@ $(OUTPUT_ELFS): $(BUILD_DIR)
 	mkdir -p $@
 
 # Buiding .elf files for every TRISC core
- $(OUTPUT_ELFS)/$(testname)_trisc0.elf :$(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_unpack.o $(BUILD_DIR)/$(testname)_unpack.o 
+ $(OUTPUT_ELFS)/$(testname)_trisc0.elf :$(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_unpack.o $(BUILD_DIR)/$(testname)_unpack.o $(LINK_OBJECTS)
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc0.ld -T$(RISCV_SOURCE)/sections.ld -o $@
- $(OUTPUT_ELFS)/$(testname)_trisc1.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_math.o $(BUILD_DIR)/$(testname)_math.o 
+ $(OUTPUT_ELFS)/$(testname)_trisc1.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_math.o $(BUILD_DIR)/$(testname)_math.o $(LINK_OBJECTS)
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc1.ld -T$(RISCV_SOURCE)/sections.ld -o $@
- $(OUTPUT_ELFS)/$(testname)_trisc2.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_pack.o $(BUILD_DIR)/$(testname)_pack.o 
+ $(OUTPUT_ELFS)/$(testname)_trisc2.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_pack.o $(BUILD_DIR)/$(testname)_pack.o $(LINK_OBJECTS)
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc2.ld -T$(RISCV_SOURCE)/sections.ld -o $@
 
 #compiling _test.cc to .o
 $(BUILD_DIR)/$(testname)_unpack.o: sources/$(testname).cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_UNPACK -c -o $@ $<
-$(BUILD_DIR)/$(testname)_math.o: sources/$(testname).cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_MATH -c -o $@ $<
-$(BUILD_DIR)/$(testname)_pack.o: sources/$(testname).cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_PACK -c -o $@ $<
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_UNPACK) -DLLK_TRISC_UNPACK -c -o $@ $<
+$(BUILD_DIR)/$(testname)_math.o: sources/$(testname).cc 
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_MATH) -DLLK_TRISC_MATH -c -o $@ $<
+$(BUILD_DIR)/$(testname)_pack.o: sources/$(testname).cc 
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_PACK) -DLLK_TRISC_PACK -c -o $@ $<
 
 #compiling main for every TRISC core
 $(BUILD_DIR)/main_unpack.o : helpers/run_elf_test.cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_UNPACK -c -o $@ $<
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_UNPACK) $(MULTIPLE_OPS) -DLLK_TRISC_UNPACK -c -o $@ $<
 $(BUILD_DIR)/main_math.o : helpers/run_elf_test.cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_MATH -c -o $@ $<
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_MATH) $(MULTIPLE_OPS) -DLLK_TRISC_MATH -c -o $@ $<
 $(BUILD_DIR)/main_pack.o : helpers/run_elf_test.cc
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -DLLK_TRISC_PACK -c -o $@ $<	
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_PACK) $(MULTIPLE_OPS) -DLLK_TRISC_PACK -c -o $@ $<	
+
+#compiling .cc for all operation libraries
+$(BUILD_DIR)/unpack.o: helpers/operations/unpack_kernels.cc
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_UNPACK) -DLLK_TRISC_UNPACK -c -o $@ $<
+$(BUILD_DIR)/math.o: helpers/operations/math_kernels.cc
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_MATH) -DLLK_TRISC_MATH -c -o $@ $<
+$(BUILD_DIR)/pack.o: helpers/operations/pack_kernels.cc
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) $(OPTIONS_PACK) -DLLK_TRISC_PACK -c -o $@ $<
 
 $(BUILD_DIR)/tmu-crt0.o: $(RISCV_SOURCE)/tmu-crt0.S | $(BUILD_DIR)
 	$(GXX) $(OPTIONS_ALL) $(OPTIONS_COMPILE) -c -o $@ $<

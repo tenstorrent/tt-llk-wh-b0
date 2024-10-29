@@ -36,19 +36,32 @@ using namespace ckernel;
 	Usage is still the same. If kernel completed successfully data in mailbox will be 1.
 */
 
-#ifdef LLK_TRISC_PACK
-volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FFC);
-#endif
-#ifdef LLK_TRISC_MATH
-volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FF8);
-#endif
+
 #ifdef LLK_TRISC_UNPACK
-volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FF4);
+	volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FFC);
+	#ifdef MULTIPLE_OPS
+		#include "operations/unpack_kernels.h"
+	#endif
+#elif defined(LLK_TRISC_MATH)
+	volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FF8);
+	#ifdef MULTIPLE_OPS
+		#include "operations/math_kernels.h"
+	#endif
+#elif defined(LLK_TRISC_PACK)
+	volatile uint32_t* mailbox = (volatile uint32_t*)(0x19FF4);
+	#ifdef MULTIPLE_OPS
+		#include "operations/pack_kernels.h"
+	#endif
 #endif
 
 int main()
 {
     FWEVENT("Launching proudction env kernels");
+
+	#ifdef MULTIPLE_OPS
+	// needs these 2 defines when compiling
+	PROCESS_NUMBERS(KERN_CNT, KERNS);
+	#endif
 
 	tensix_sync();
     run_kernel();

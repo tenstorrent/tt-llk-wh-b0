@@ -97,7 +97,7 @@ static_assert((DEST_NUM_TILES_FP16 & (DEST_NUM_TILES_FP16 - 1)) == 0);
 #define LO_16(REG) (2 * (REG))
 #define HI_16(REG) (2 * (REG) + 1)
 
-constexpr static std::uint32_t GET_L1_HEADERLESS_TILE_SIZE(uint format) {
+constexpr static std::uint32_t GET_L1_HEADERLESS_TILE_SIZE(int format) {
     switch (format&0xF) {
         case ((uint8_t)DataFormat::Int32):
         case ((uint8_t)DataFormat::Float32): return (4096>>4);
@@ -115,7 +115,7 @@ constexpr static std::uint32_t GET_L1_HEADERLESS_TILE_SIZE(uint format) {
     };
 }
 
-constexpr static bool IS_BFP_FORMAT(uint format) {
+constexpr static bool IS_BFP_FORMAT(int format) {
     switch (format&0xF) {
         case ((uint8_t)DataFormat::Bfp8):
         case ((uint8_t)DataFormat::Bfp8_b):
@@ -127,7 +127,7 @@ constexpr static bool IS_BFP_FORMAT(uint format) {
     };
 }
 
-constexpr static bool IS_BFP_A_FORMAT(uint format) {
+constexpr static bool IS_BFP_A_FORMAT(int format) {
     switch (format&0xF) {
         case ((uint8_t)DataFormat::Bfp8):
         case ((uint8_t)DataFormat::Bfp4):
@@ -136,7 +136,7 @@ constexpr static bool IS_BFP_A_FORMAT(uint format) {
     };
 }
 
-constexpr static bool IS_A_FORMAT(uint format) {
+constexpr static bool IS_A_FORMAT(int format) {
     switch (format&0xF) {
         case ((uint8_t)DataFormat::Lf8):
         case ((uint8_t)DataFormat::Float16):
@@ -147,7 +147,7 @@ constexpr static bool IS_A_FORMAT(uint format) {
     };
 }
 
-constexpr static std::uint32_t SCALE_DATUM_SIZE(uint format, uint datum_count) {
+constexpr static std::uint32_t SCALE_DATUM_SIZE(int format, int datum_count) {
     switch (format&0xF) {
         case ((uint8_t)DataFormat::Int32):
         case ((uint8_t)DataFormat::Float32): return (datum_count<<2);
