@@ -38,7 +38,7 @@ ifeq ($(testname), multiple_ops_test)
 
 else
 	MULTIPLE_OPS= 
-    LINK_OBJECTS= 
+	LINK_OBJECTS= 
 	OPTIONS_UNPACK= 
 	OPTIONS_MATH= 
 	OPTIONS_PACK= 
