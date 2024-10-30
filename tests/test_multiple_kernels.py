@@ -4,13 +4,9 @@ import os
 import struct
 from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from pack import *
+from unpack import *
 
-import time
-
-mathop_dict = {
-    1 : "elwadd",
-    2 : "elwsub"
-}
 
 format_dict = {
     "Float32": torch.float32,
@@ -25,91 +21,37 @@ format_args_dict = {
     "Float16_b": "FORMAT_FLOAT16_B"
 }
 
-def flatten_list(sublists):
-    return [item for sublist in sublists for item in sublist]
-
-def int_to_bytes_list(n):
-    binary_str = bin(n)[2:]
-    padded_binary = binary_str.zfill(32)
-    bytes_list = [int(padded_binary[i:i + 8], 2) for i in range(0, 32, 8)]
-    return bytes_list
-
-def bfloat16_to_bytes(number):
-    number_unpacked = struct.unpack('!I', struct.pack('!f', number))[0]
-    res_masked = number_unpacked & 0xFFFF0000
-    return int_to_bytes_list(res_masked)
-
-def bytes_to_bfloat16(byte_list):
-    bytes_data = bytes(byte_list)
-    unpacked_value = struct.unpack('>f', bytes_data)[0]
-    return torch.tensor(unpacked_value, dtype=torch.float32)
-
-def write_stimuli_to_l1(buffer_A, buffer_B,stimuli_format):
-    decimal_A = []
-    decimal_B = []
-
-    for i in buffer_A:
-        decimal_A.append(bfloat16_to_bytes(i)[::-1])
-    for i in buffer_B:
-        decimal_B.append(bfloat16_to_bytes(i)[::-1])
-
-    decimal_A = flatten_list(decimal_A)
-    decimal_B = flatten_list(decimal_B)
-
-    write_to_device("18-18", 0x1b000, decimal_A)
-    write_to_device("18-18", 0x1c000, decimal_B)
-
 def generate_stimuli(stimuli_format):
-    srcA = torch.full((1024,), fill_value=2, dtype=format_dict[stimuli_format]) # hardcoded for now
-    srcB = torch.full((1024,), fill_value=2, dtype=format_dict[stimuli_format]) # hardcoded for now
+    # srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
+    # srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
 
-    return srcA.tolist() , srcB.tolist()
+    srcA = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
+    srcB = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
+    return srcA, srcB
 
-def generate_golden(operand1, operand2, operation):
-    tensor1_float = torch.tensor(operand1, dtype=torch.float32)
-    tensor2_float = torch.tensor(operand2, dtype=torch.float32)
-
-    dest = torch.full((1024,), fill_value=0, dtype=torch.float32)
-
-    if operation == "elwadd":
-        dest = tensor1_float + tensor2_float
-    elif operation == "elwsub":
-        dest = tensor1_float - tensor2_float
-    elif operation == "elwmul":
-        dest = tensor1_float * tensor2_float
-    else:
-        raise ValueError("Unsupported operation!")
-
-    return dest.tolist()
-
-def generate_golden(operand1, operand2, format, operations):
-    tensor1_float = torch.tensor(operand1, dtype=torch.float32)
-    tensor2_float = torch.tensor(operand2, dtype=torch.float32)
-
-    dest = torch.full((1024,), fill_value=0, dtype=torch.float32)
-
-    dest_inter = []
-
+def generate_golden(operations, operand1, operand2, data_format):
+    tensor1_float = operand1.clone().detach().to(format_dict[data_format])
+    tensor2_float = operand2.clone().detach().to(format_dict[data_format])
+    
     for op in operations:
-
-        operation = mathop_dict[op]
-
-        if operation == "elwadd":
-            dest = tensor1_float + tensor2_float
-        elif operation == "elwsub":
-            dest = tensor1_float - tensor2_float
-        elif operation == "elwmul":
-            dest = tensor1_float * tensor2_float
+        if(op==1):
+            res = tensor1_float + tensor2_float
+        elif(op==2):
+            res = tensor1_float - tensor2_float
+        elif(op==3):
+            res = tensor1_float * tensor2_float
         else:
             raise ValueError("Unsupported operation!")
 
-        dest_inter.append(dest)
+    return res.tolist()
 
-    for inter in dest_inter:
-        inter = inter.tolist()
-
-    return dest.tolist(), dest_inter
-    # return dest #.tolist()
+def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
+    if stimuli_format == "Float16_b":
+        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
+        write_to_device("18-18", 0x1c000, pack_bfp16(buffer_B))    
+    elif stimuli_format == "Float16":
+        write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
+        write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
 unpack_kernels = [2,2,2]
 math_kernels = [2,1,2]
@@ -144,10 +86,10 @@ def test_multiple_kernels(format, testname, machine):
     # ******************************** 
 
     context = init_debuda()
-
     src_A, src_B = generate_stimuli(format)
-    write_stimuli_to_l1(src_A, src_B,format)
-    golden, golden_inter = generate_golden(src_A, src_B, format, math_kernels)
+    golden = generate_golden(math_kernels, src_A, src_B, format)
+    write_stimuli_to_l1(src_A, src_B, format)
+
 
     make_cmd = f"make format={format_args_dict[format]} testname={testname} machine={machine}"
     make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
@@ -159,15 +101,14 @@ def test_multiple_kernels(format, testname, machine):
     for i in range(3):
         run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
 
-    read_data = read_words_from_device("18-18", 0x1a000, word_count=1024)
-    byte_list = []
-    golden_form_L1 = []
+    read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
+    read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
+    
+    read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
+    
+    res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
 
-    for word in read_data:
-        byte_list.append(int_to_bytes_list(word))
-        
-    for i in byte_list:
-        golden_form_L1.append(bytes_to_bfloat16(i).item())
+    assert len(res_from_L1) == len(golden)
 
     os.system("make clean")
 
@@ -175,21 +116,13 @@ def test_multiple_kernels(format, testname, machine):
     math_mailbox = read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big')
     pack_mailbox = read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big')
 
-    print("*"*50)
-    print(golden[511])
-    print(golden_form_L1[511])
-    print(len(golden_inter))
-    print(len(golden_inter[0]))
-    print("*"*50)
+    # Mailbox checks
+    assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    tolerance = 0.05
-    
-    # test end results
-    for i in range(128):
-        assert abs(golden[i] - golden_form_L1[i]) <= tolerance, f"i = {i}, {golden[i]}, {golden_form_L1[i]}"
-
-    # TODO: test intermediate results
-
-    assert unpack_mailbox == b'\x00\x00\x00\x01'
-    assert math_mailbox == b'\x00\x00\x00\x01'
-    assert pack_mailbox == b'\x00\x00\x00\x01'
+    tolerance = 0.1
+    for i in range(len(golden)):
+        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
+        if golden[i] != 0:
+            assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"

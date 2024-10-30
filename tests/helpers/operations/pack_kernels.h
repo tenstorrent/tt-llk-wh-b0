@@ -5,9 +5,9 @@
     #include <cstdarg>
     #define PROCESS_NUMBERS(n, ...) processNumbers(n, __VA_ARGS__)
 
-    void pack_Dest_kernel();
-    inline void nop(){};
-    extern void(*kernels[10])(void);
+    void pack_Dest_kernel(int);
+    inline void nop(int){};
+    extern void(*kernels[10])(int);
 
     /* Function for assigning elemtens of kernerls array to some of kernels */
     inline void processNumbers(int n, int first, ...) {
