@@ -54,7 +54,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
 unpack_kernels = [2,2,2]
-math_kernels = [2,1,2]
+math_kernels = [1,1,1]
 pack_kernels = [1,1,1]
 pack_addresses = [0x1a000,0x1d000,0x1e000]
 

@@ -61,6 +61,9 @@ int main()
 	#ifdef MULTIPLE_OPS
 	// needs these 2 defines when compiling
 	PROCESS_NUMBERS(KERN_CNT, KERNS);
+		#ifdef LLK_TRISC_PACK
+			PROCESS_ADDRESSES(PACK_ADDR_CNT,PACK_ADDRS);
+		#endif
 	#endif
 
 	tensix_sync();
