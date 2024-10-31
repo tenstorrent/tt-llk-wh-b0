@@ -14,28 +14,27 @@ OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
 INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi-rel/include
 
-MINUS_D:=-D
-SPACE:= 
-FORMAT_ARG:=$(MINUS_D)$(format)$(SPACE)
+FORMAT_ARG:=-D$(format) 
 
 ifeq ($(mathop),)
     MATHOP_ARG =
 else
-	MATHOP_ARG:=$(MINUS_D)$(mathop)$(SPACE)
+	MATHOP_ARG:=-D$(mathop) 
 endif
 
 # If test needs to run muliple consecutive operations it needs some additional
 # files to be linked to it
 ifeq ($(testname), multiple_ops_test)
 	MULTIPLE_OPS:=-DMULTIPLE_OPS
-	OPTIONS_UNPACK:=$(MINUS_D)KERN_CNT=$(unpack_kern_cnt)$(SPACE)
-	OPTIONS_UNPACK+=$(MINUS_D)KERNS=$(unpack_kerns)$(SPACE)
-	OPTIONS_MATH:=$(MINUS_D)KERN_CNT=$(math_kern_cnt)$(SPACE)
-	OPTIONS_MATH+=$(MINUS_D)KERNS=$(math_kerns)$(SPACE)
-	OPTIONS_PACK:=$(MINUS_D)KERN_CNT=$(pack_kern_cnt)$(SPACE)
-	OPTIONS_PACK+=$(MINUS_D)KERNS=$(pack_kerns)$(SPACE)
+	OPTIONS_UNPACK:=-DKERN_CNT=$(unpack_kern_cnt) 
+	OPTIONS_UNPACK+=-DKERNS=$(unpack_kerns) 
+	OPTIONS_MATH:=-DKERN_CNT=$(math_kern_cnt) 
+	OPTIONS_MATH+=-DKERNS=$(math_kerns) 
+	OPTIONS_PACK:=-DKERN_CNT=$(pack_kern_cnt) 
+	OPTIONS_PACK+=-DKERNS=$(pack_kerns) 
+	OPTIONS_PACK+=-DPACK_ADDR_CNT=$(pack_addr_cnt) 
+	OPTIONS_PACK+=-DPACK_ADDRS=$(pack_addrs) 
     LINK_OBJECTS = $(BUILD_DIR)/unpack.o $(BUILD_DIR)/math.o $(BUILD_DIR)/pack.o
-
 else
 	MULTIPLE_OPS= 
 	LINK_OBJECTS= 

@@ -56,6 +56,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
 unpack_kernels = [2,2,2]
 math_kernels = [2,1,2]
 pack_kernels = [1,1,1]
+pack_addresses = [0x1a000,0x1d000,0x1e000]
 
 @pytest.mark.parametrize("format", ["Float16_b"])
 @pytest.mark.parametrize("testname", ["multiple_ops_test"])
@@ -83,6 +84,11 @@ def test_multiple_kernels(format, testname, machine):
         pack_kerns_formatted+=str(i)+","
     pack_kerns_formatted = pack_kerns_formatted[:-1]
 
+    pack_addresses_formatted = ""
+    for i in pack_addresses:
+        pack_addresses_formatted+=str(hex(i)+",")
+    pack_addresses_formatted = pack_addresses_formatted[:-1]
+
     # ******************************** 
 
     context = init_debuda()
@@ -90,12 +96,11 @@ def test_multiple_kernels(format, testname, machine):
     golden = generate_golden(math_kernels, src_A, src_B, format)
     write_stimuli_to_l1(src_A, src_B, format)
 
-
     make_cmd = f"make format={format_args_dict[format]} testname={testname} machine={machine}"
     make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
     make_cmd += " math_kern_cnt="+ str(len(math_kernels))+ " math_kerns="+math_kerns_formatted
     make_cmd += " pack_kern_cnt="+ str(len(pack_kernels))+ " pack_kerns="+pack_kerns_formatted
-
+    make_cmd += " pack_addr_cnt="+ str(len(pack_addresses))+ " pack_addrs="+pack_addresses_formatted
     os.system(make_cmd)
 
     for i in range(3):
