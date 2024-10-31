@@ -33,17 +33,21 @@ def generate_golden(operations, operand1, operand2, data_format):
     tensor1_float = operand1.clone().detach().to(format_dict[data_format])
     tensor2_float = operand2.clone().detach().to(format_dict[data_format])
     
+    res = []
+
     for op in operations:
         if(op==1):
-            res = tensor1_float + tensor2_float
+            res_tmp = tensor1_float + tensor2_float
         elif(op==2):
-            res = tensor1_float - tensor2_float
+            res_tmp = tensor1_float - tensor2_float
         elif(op==3):
-            res = tensor1_float * tensor2_float
+            res_tmp = tensor1_float * tensor2_float
         else:
             raise ValueError("Unsupported operation!")
-
-    return res.tolist()
+        
+        res.append(res_tmp.tolist())
+    
+    return res
 
 def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
     if stimuli_format == "Float16_b":
@@ -106,28 +110,28 @@ def test_multiple_kernels(format, testname, machine):
     for i in range(3):
         run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
 
-    read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
-    read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
-    
-    read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
-    
-    res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
-
-    assert len(res_from_L1) == len(golden)
-
     os.system("make clean")
-
-    unpack_mailbox = read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big')
-    math_mailbox = read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big')
-    pack_mailbox = read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big')
 
     # Mailbox checks
     assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    tolerance = 0.1
-    for i in range(len(golden)):
-        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
-        if golden[i] != 0:
-            assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
+    for index in range(len(golden)):
+        read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
+        read_data = read_words_from_device("18-18", pack_addresses[index], word_count=read_words_cnt)
+        read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
+        res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
+        curr_golden = golden[index]
+
+        assert len(res_from_L1) == len(curr_golden)
+        print("Checking all elements of golden at index: ", index)
+
+        tolerance = 0.1
+
+        for i in range(len(curr_golden)):
+            read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
+            if curr_golden[i] != 0:
+                assert abs((res_from_L1[i] - curr_golden[i]) / curr_golden[i]) <= tolerance, f"i = {i}, {curr_golden[i]}, {res_from_L1[i]} {read_word}"
+
+
