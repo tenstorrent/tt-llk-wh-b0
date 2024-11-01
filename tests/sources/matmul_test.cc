@@ -1,15 +1,3 @@
-
-/*
-===================================
-All constants are defined in file ../helper/params.h
-and are set during compilation.
-
-DATA_FORMAT -> used insinde UNPACK and PACK
-ELTWISE_BINARY_OP -> used inside of MATH for binary eltwise kernels 
-
-===================================
-*/
-
 #include <cstdint>
 #include <cstdio>
 
@@ -31,9 +19,9 @@ volatile uint32_t* buffer_B = (volatile uint32_t*)0x1c000;
 
 void run_kernel()
 {
-    _llk_unpack_AB_matmul_hw_configure_<>(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT);
+    _llk_unpack_AB_matmul_hw_configure_<>(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT,16,16,0,4,4,64,64);
     _llk_unpack_AB_matmul_init_<>();
-    _llk_unpack_AB_matmul_<>((std::uint32_t)buffer_A/16-1,(std::uint32_t)buffer_B/16-1,0,0,1,1);
+    _llk_unpack_AB_matmul_<>((std::uint32_t)buffer_A/16-1,(std::uint32_t)buffer_B/16-1,0,0,64,64);
 }
 
 #endif
@@ -46,11 +34,11 @@ void run_kernel()
 
 void run_kernel()
 {
-    _llk_math_matmul_init_<4,DstTileFaceLayout::RowMajor>();
-    _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
+    _llk_math_matmul_init_<0,DstTileFaceLayout::RowMajor>();
     _llk_math_hw_configure_<false,false>(DATA_FORMAT,DATA_FORMAT);
+    _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
     _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
-    _llk_math_matmul_<4,DstTileFaceLayout::RowMajor>(0,false,1,1,1);
+    _llk_math_matmul_<0,DstTileFaceLayout::RowMajor>(0);
     _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
