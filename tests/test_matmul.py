@@ -90,6 +90,8 @@ def test_all(format, testname, machine):
     counter = 0
     correct_indexes = []
 
+    print(res_from_L1)
+
     tolerance = 0.1
     for i in range(len(golden)):
         read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])

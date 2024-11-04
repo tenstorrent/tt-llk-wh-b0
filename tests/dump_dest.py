@@ -54,16 +54,16 @@ print("force 32bit float format:", force_32bit_format)
 
 write_to_device("18-18", RISCV_DEBUG_REG_DBG_ARRAY_RD_EN, [0x1])
 #for row in range(64):
-for row in range(1):
+for row in range(64):
     for i in range(8):
         dbg_array_rd_cmd = row + (i << 12) + (2 << 16)
-        print("dbg_array_rd_cmd", hex(dbg_array_rd_cmd), dbg_array_rd_cmd)
+        #print("dbg_array_rd_cmd", hex(dbg_array_rd_cmd), dbg_array_rd_cmd)
         write_to_device("18-18", RISCV_DEBUG_REG_DBG_ARRAY_RD_CMD, dbg_array_rd_cmd.to_bytes(4, byteorder='little'))
         rd_data = read_words_from_device("18-18", RISCV_DEBUG_REG_DBG_ARRAY_RD_DATA, word_count=1)
 
         demangled = flip_dest_bits(rd_data[0])
 
-        print("rd_data", hex(demangled))
+        print("rd_data", hex(demangled), " @ ", row,i)
 
 write_to_device("18-18", RISCV_DEBUG_REG_DBG_ARRAY_RD_EN, [0x0])
 write_to_device("18-18", RISCV_DEBUG_REG_DBG_ARRAY_RD_CMD, [0x0])
