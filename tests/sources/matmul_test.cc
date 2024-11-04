@@ -36,18 +36,12 @@ void run_kernel()
 
 void run_kernel()
 {
-        _llk_math_matmul_init_<0,DstTileFaceLayout::RowMajor>();
+        _llk_math_matmul_init_<4,DstTileFaceLayout::RowMajor>();
         _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
         _llk_math_hw_configure_<false,false>(DATA_FORMAT,DATA_FORMAT);
         _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
-        _llk_math_matmul_<0,DstTileFaceLayout::RowMajor>(0);
+        _llk_math_matmul_<4,DstTileFaceLayout::RowMajor>(0);
         _llk_math_dest_section_done_<DstSync::SyncFull,false>();
-
-    // _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
-    // _llk_math_hw_configure_<false,false>(DATA_FORMAT,DATA_FORMAT);
-    // _llk_math_eltwise_binary_init_<EltwiseBinaryType::ELWADD, BroadcastType::NONE>(4, 0, 0);
-    // _llk_math_eltwise_binary_<EltwiseBinaryType::ELWADD, BroadcastType::NONE,DstSync::SyncFull>(4, 0, true);
-    // _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
 #endif 
@@ -65,7 +59,7 @@ void run_kernel()
     {
         buffer_Dest[i] = 0xdeadbeef;
     }
-    _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 16*16*4);
+    _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 128);
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
     _llk_packer_wait_for_math_done_();

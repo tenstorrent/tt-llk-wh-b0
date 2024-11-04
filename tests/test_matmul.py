@@ -104,6 +104,6 @@ def test_all(format, testname, machine):
             #     print(log)
 
     print("*"*50)
-    print(counter)
-    print("*"*50)
     print(correct_indexes)
+    print("*"*50)
+    print(counter)
