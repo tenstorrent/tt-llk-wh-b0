@@ -6,6 +6,8 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
+import random
+import itertools
 
 
 format_dict = {
@@ -20,6 +22,10 @@ format_args_dict = {
     "Float16": "FORMAT_FLOAT16",
     "Float16_b": "FORMAT_FLOAT16_B"
 }
+
+def generate_math_kernels():
+    # Generate all combinations of (1, 2) repeated 3 times
+    return list(itertools.product([1, 2], repeat=3))
 
 def generate_stimuli(stimuli_format):
     srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
@@ -59,17 +65,17 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
 unpack_kernels = [2,2,2]
-math_kernels = [1,1,1]
 pack_kernels = [1,1,1]
 pack_addresses = [0x1a000,0x1d000,0x1e000]
 
+@pytest.mark.parametrize("math_kernels", generate_math_kernels())
 @pytest.mark.parametrize("format", ["Float16_b"])
 @pytest.mark.parametrize("testname", ["multiple_ops_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
-def test_multiple_kernels(format, testname, machine):
+def test_multiple_kernels(format, testname, machine, math_kernels):
 
     global unpack_kernels
-    global math_kernels
+    #global math_kernels
     global pack_kernels
 
     # *********** formatting kernels
@@ -96,12 +102,18 @@ def test_multiple_kernels(format, testname, machine):
 
     # ******************************** 
 
+    print("*"*50)
+    print(unpack_kernels)
+    print(math_kernels)
+    print(pack_kernels)
+    print("*"*50)
+
     context = init_debuda()
     src_A, src_B = generate_stimuli(format)
     golden = generate_golden(math_kernels, src_A, src_B, format)
     write_stimuli_to_l1(src_A, src_B, format)
 
-    make_cmd = f"make format={format_args_dict[format]} testname={testname} machine={machine}"
+    make_cmd = f"make --silent format={format_args_dict[format]} testname={testname} machine={machine}"
     make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
     make_cmd += " math_kern_cnt="+ str(len(math_kernels))+ " math_kerns="+math_kerns_formatted
     make_cmd += " pack_kern_cnt="+ str(len(pack_kernels))+ " pack_kerns="+pack_kerns_formatted
@@ -130,9 +142,18 @@ def test_multiple_kernels(format, testname, machine):
 
         tolerance = 0.1
 
-        for i in range(len(curr_golden)):
-            read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
-            if curr_golden[i] != 0:
-                assert abs((res_from_L1[i] - curr_golden[i]) / curr_golden[i]) <= tolerance, f"i = {i}, {curr_golden[i]}, {res_from_L1[i]} {read_word}"
+    for i in range(len(curr_golden)):
+        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
+        
+        if curr_golden[i] != 0:
+            try:
+                assert abs((res_from_L1[i] - curr_golden[i]) / curr_golden[i]) <= tolerance, \
+                    f"Failed at i = {i}, for math_kernels={math_kernels}, " \
+                    f"golden={curr_golden[i]}, result={res_from_L1[i]} " \
+                    f"read_word={read_word}"
+            except AssertionError:
+                print(f"Assertion failed for math_kernels={math_kernels}, index={index}, i={i}")
+                raise  # Reraise the exception to keep the test failing after printing.
+
 
 
