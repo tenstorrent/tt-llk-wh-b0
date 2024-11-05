@@ -33,7 +33,6 @@
         #define DATA_FORMAT (uint32_t)DataFormat::Int32
     #endif
 
-
     #ifdef ELTWISE_BINARY_ADD
         #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWADD
     #endif
@@ -42,6 +41,16 @@
     #endif
     #ifdef ELTWISE_BINARY_MUL
         #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWMUL
+    #endif
+
+    #ifdef SFPU_OP_SQRT
+        #define SFPU_OPERATION sqrt
+    #endif
+    #ifdef SFPU_OP_POWER
+            #define SFPU_OPERATION power
+    #endif
+    #ifdef SFPU_OP_SQUARE
+            #define SFPU_OPERATION square
     #endif
 
 #endif

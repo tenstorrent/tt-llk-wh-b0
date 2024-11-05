@@ -59,7 +59,7 @@ void run_kernel()
     {
         buffer_Dest[i] = 0xdeadbeef;
     }
-    _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 128);
+    _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 128); // 128 is for bfloat16
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
     _llk_packer_wait_for_math_done_();
