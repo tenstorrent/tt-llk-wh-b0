@@ -24,14 +24,11 @@ format_args_dict = {
 }
 
 def generate_math_kernels(length):
-    return list(itertools.product([1, 2], repeat=length))
+    return list(itertools.product([1, 2, 3], repeat=length))
 
 def generate_stimuli(stimuli_format):
     srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
     srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-
-    #srcA = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
-    #srcB = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
     
     return srcA, srcB
 

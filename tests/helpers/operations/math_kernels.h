@@ -20,7 +20,7 @@
         } else if(first == 2){
             kernels[0] = &elwsub_kernel;
         }else if(first == 3){
-            //kernels[0] &elwmul_kernel
+            kernels[0] = &elwmul_kernel;
         }
         else {
             kernels[0] = &nop;
@@ -35,7 +35,7 @@
             } else if(num == 2){
                 kernels[i] = &elwsub_kernel;
             }else if(num == 3){
-                //kernels[i] &elwmul_kernel
+                kernels[i] = &elwmul_kernel;
             }
             else {
                 kernels[i] = &nop;

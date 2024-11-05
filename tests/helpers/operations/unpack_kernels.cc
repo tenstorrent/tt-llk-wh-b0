@@ -3,6 +3,7 @@
 #include "../params.h"
 #include "llk_unpack_A.h"
 #include "llk_unpack_AB.h"
+#include "llk_unpack_AB_matmul.h"
 #include "llk_unpack_common.h"
 
     volatile uint32_t* buffer_A = (volatile uint32_t*)0x1b000;
@@ -19,4 +20,3 @@
         _llk_unpack_AB_init_<>();
         _llk_unpack_AB_<>((std::uint32_t)buffer_A/16-1,(std::uint32_t)buffer_B/16-1);
     }
-

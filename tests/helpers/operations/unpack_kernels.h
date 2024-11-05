@@ -13,12 +13,12 @@
     /* Function for assigning elemtens of kernerls array to some of kernels */
     inline void processNumbers(int n, int first, ...) {
 
-        // Set the first kernel based on the first argument
+        // Set the first kernel based on the first arguments
         if(first == 1){
             kernels[0] = &unpack_A_kernel;
         } else if(first == 2){
             kernels[0] = &unpack_AB_kernel;
-        } else {
+        }else {
             kernels[0] = &nop;
         }
 
@@ -30,7 +30,7 @@
                 kernels[i] = &unpack_A_kernel;
             } else if(num == 2){
                 kernels[i] = &unpack_AB_kernel;
-            } else {
+            }else {
                 kernels[i] = &nop;
             }
         }
