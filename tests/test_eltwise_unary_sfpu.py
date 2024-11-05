@@ -83,7 +83,7 @@ def test_all(format, mathop, testname, machine):
 
     print("*"*50)
     print(src_A[0:20].tolist())
-    print(read_data[0:20])
+    print(res_from_L1[0:20])
     print("*"*50)
 
     assert 1==2

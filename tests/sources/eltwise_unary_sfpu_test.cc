@@ -4,7 +4,7 @@
 #include "llk_defs.h"
 #include "ckernel.h"
 
-const bool unpack_to_dest = false;
+const bool unpack_to_dest = true;
 
 // Globals
 uint32_t unp_cfg_context = 0;
@@ -40,15 +40,14 @@ using namespace ckernel;
 
 void run_kernel()
 {
-    //_llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, false>(0, 0, 4, DATA_FORMAT);
-    //_llk_math_pack_sync_init_<DstSync::SyncFull,false>();
+    _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, false>(0, 0, 4, DATA_FORMAT);
+    _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
     //_llk_math_hw_configure_(DATA_FORMAT, DATA_FORMAT);
-    //_llk_math_wait_for_dest_available_<DstSync::SyncFull>();
+    _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
     _llk_math_eltwise_unary_datacopy_<DataCopyType::A2D, DstSync::SyncFull, BroadcastType::NONE, false, unpack_to_dest>(0, DATA_FORMAT, DATA_FORMAT);
     //CALCULATION
     //_llk_math_eltwise_unary_sfpu_init_<SFPU_OPERATION>();
-    set_math_semaphores();
-    //_llk_math_dest_section_done_<DstSync::SyncFull,false>();
+    _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
 #endif 
