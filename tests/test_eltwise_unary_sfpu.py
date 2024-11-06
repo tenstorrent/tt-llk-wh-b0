@@ -26,8 +26,11 @@ mathop_args_dict = {
 }
 
 def generate_stimuli(stimuli_format):
-    #srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-    srcA = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
+
+    # for simplicity stimuli is only 256 numbers
+    # since sfpu operates only on part of dest
+
+    srcA = torch.rand(256, dtype=format_dict[stimuli_format]) + 0.5
     return srcA
 
 def generate_golden(operation, operand1, data_format):
@@ -48,8 +51,6 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
-    elif stimuli_format == "Float32":
-        write_to_device("18-18",0x1b000, pack_fp32(buffer_A))
 
 @pytest.mark.parametrize("format", ["Float16_b"])  # , "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_sfpu_test"])
@@ -76,8 +77,6 @@ def test_all(format, mathop, testname, machine):
         res_from_L1 = unpack_bfp16(read_data_bytes)
     elif (format == "Float16"):
         res_from_L1 = unpack_fp16(read_data_bytes) 
-    else:
-        res_from_L1 = unpack_fp32(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
 
@@ -88,15 +87,8 @@ def test_all(format, mathop, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    print("*"*50)
-    print(src_A[0:20].tolist())
-    print(res_from_L1[0:20])
-    print("*"*50)
-
-    assert 1==2
-
-    # tolerance = 0.1
-    # for i in range(len(golden)):
-    #     read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
-    #     if golden[i] != 0:
-    #         assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
+    tolerance = 0.1
+    for i in range(len(golden)):
+        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
+        if golden[i] != 0:
+            assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"

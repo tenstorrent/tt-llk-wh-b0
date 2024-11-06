@@ -37,16 +37,26 @@ void run_kernel()
 #include "../helpers/params.h"
 
 using namespace ckernel;
+using namespace ckernel::sfpu;
 
 void run_kernel()
 {
+    // copy srca to dest
     _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, false>(0, 0, 4, DATA_FORMAT);
     _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
     _llk_math_hw_configure_<false,false>(DATA_FORMAT, DATA_FORMAT);
     _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
     _llk_math_eltwise_unary_datacopy_<DataCopyType::A2D, DstSync::SyncFull, BroadcastType::NONE, false, unpack_to_dest>(0, DATA_FORMAT, DATA_FORMAT);
-    //CALCULATION
-    //_llk_math_eltwise_unary_sfpu_init_<SFPU_OPERATION>();
+    
+    // calculation of sfpu operation on dest
+    _llk_math_eltwise_unary_sfpu_init_<SFPU_OPERATION>();
+    _llk_math_eltwise_unary_sfpu_start_<DstSync::SyncFull>(0);
+    // calling sfpu function from ckernel
+    // this part is where parametrization of operation takes part
+    _init_sqrt_<false>();
+    _calculate_sqrt_<false,0,10>(10);
+
+    _llk_math_eltwise_unary_sfpu_done_();
     _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
