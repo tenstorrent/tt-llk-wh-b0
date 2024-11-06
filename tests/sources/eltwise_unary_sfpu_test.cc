@@ -21,9 +21,9 @@ volatile uint32_t* buffer_A = (volatile uint32_t*)0x1b000;
 
 void run_kernel()
 {
-    _llk_unpack_A_hw_configure_<>(DATA_FORMAT,DATA_FORMAT);
+    _llk_unpack_A_hw_configure_<>(DATA_FORMAT,DATA_FORMAT,FACE_R_DIM,0,4);
     _llk_unpack_A_init_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>(0, 0, FACE_R_DIM, 4, DATA_FORMAT, DATA_FORMAT);
-    _llk_unpack_A_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>((((uint32_t)&buffer_A)/16)-1, 0, DATA_FORMAT, DATA_FORMAT);
+    _llk_unpack_A_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>((((uint32_t)buffer_A)/16)-1, 0, DATA_FORMAT, DATA_FORMAT);
 }
 
 #endif
@@ -42,7 +42,7 @@ void run_kernel()
 {
     _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, false>(0, 0, 4, DATA_FORMAT);
     _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
-    //_llk_math_hw_configure_(DATA_FORMAT, DATA_FORMAT);
+    _llk_math_hw_configure_<false,false>(DATA_FORMAT, DATA_FORMAT);
     _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
     _llk_math_eltwise_unary_datacopy_<DataCopyType::A2D, DstSync::SyncFull, BroadcastType::NONE, false, unpack_to_dest>(0, DATA_FORMAT, DATA_FORMAT);
     //CALCULATION

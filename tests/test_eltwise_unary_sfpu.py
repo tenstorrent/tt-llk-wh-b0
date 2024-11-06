@@ -48,6 +48,8 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
+    elif stimuli_format == "Float32":
+        write_to_device("18-18",0x1b000, pack_fp32(buffer_A))
 
 @pytest.mark.parametrize("format", ["Float16_b"])  # , "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_sfpu_test"])
@@ -59,7 +61,7 @@ def test_all(format, mathop, testname, machine):
     golden = generate_golden(mathop, src_A, format)
     write_stimuli_to_l1(src_A, format)
 
-    make_cmd = f"make format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
+    make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
     os.system(make_cmd)
 
     for i in range(3):
@@ -70,7 +72,12 @@ def test_all(format, mathop, testname, machine):
     
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
     
-    res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
+    if (format == "Float16_b"):
+        res_from_L1 = unpack_bfp16(read_data_bytes)
+    elif (format == "Float16"):
+        res_from_L1 = unpack_fp16(read_data_bytes) 
+    else:
+        res_from_L1 = unpack_fp32(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
 
