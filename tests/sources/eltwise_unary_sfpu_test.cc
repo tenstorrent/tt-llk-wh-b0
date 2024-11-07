@@ -53,8 +53,9 @@ void run_kernel()
     _llk_math_eltwise_unary_sfpu_start_<DstSync::SyncFull>(0);
     // calling sfpu function from ckernel
     // this part is where parametrization of operation takes part
-    _init_sqrt_<false>();
-    _calculate_sqrt_<false,0,10>(10);
+    #ifdef SFPU_CALLS
+    SFPU_CALLS
+    #endif
 
     _llk_math_eltwise_unary_sfpu_done_();
     _llk_math_dest_section_done_<DstSync::SyncFull,false>();

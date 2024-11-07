@@ -22,14 +22,16 @@ format_args_dict = {
 }
 
 mathop_args_dict = {
-    "sqrt": "SFPU_OP_SQRT"
+    "sqrt": "SFPU_OP_SQRT",
+    "square": "SFPU_OP_SQUARE",
+    "log": "SFPU_OP_LOG"
 }
 
 def generate_stimuli(stimuli_format):
 
     # for simplicity stimuli is only 256 numbers
     # since sfpu operates only on part of dest
-
+    #srcA = torch.full((256,), 2, dtype=format_dict[stimuli_format])
     srcA = torch.rand(256, dtype=format_dict[stimuli_format]) + 0.5
     return srcA
 
@@ -41,6 +43,12 @@ def generate_golden(operation, operand1, data_format):
     if(operation == "sqrt"):
         for number in tensor1_float.tolist():
             res.append(math.sqrt(number))
+    elif(operation == "square"): 
+        for number in tensor1_float.tolist():
+            res.append(number*number)
+    elif(operation == "log"):
+        for number in tensor1_float.tolist():
+            res.append(math.log(number))        
     else:
         raise ValueError("Unsupported operation!")
 
@@ -52,9 +60,9 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
 
-@pytest.mark.parametrize("format", ["Float16_b"])  # , "Float16"])
+@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_sfpu_test"])
-@pytest.mark.parametrize("mathop", ["sqrt"])
+@pytest.mark.parametrize("mathop", ["square", "sqrt", "log"])#["sqrt","square","log"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -63,6 +71,11 @@ def test_all(format, mathop, testname, machine):
     write_stimuli_to_l1(src_A, format)
 
     make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
+    
+    print("*"*50)
+    print(make_cmd)
+    print("*"*50)
+
     os.system(make_cmd)
 
     for i in range(3):
