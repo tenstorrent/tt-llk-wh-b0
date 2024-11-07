@@ -18,7 +18,7 @@ volatile uint32_t tt_l1_ptr l1_buffer[16] __attribute__ ((section (".text#"))) _
 #include "../helpers/operations/pack_kernels.h"
 #endif
 
-#if defined(LLK_TRISC_PACK) || defined(LLK_TRISC_UNPACK)
+#ifdef LLK_TRISC_PACK
 void(*kernels[10])(int);
 #else
 void(*kernels[10])(void);

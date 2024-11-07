@@ -35,7 +35,23 @@ ifeq ($(testname), multiple_ops_test)
 	OPTIONS_PACK+=-DPACK_ADDR_CNT=$(pack_addr_cnt) 
 	OPTIONS_PACK+=-DPACK_ADDRS=$(pack_addrs) 
     LINK_OBJECTS = $(BUILD_DIR)/unpack.o $(BUILD_DIR)/math.o $(BUILD_DIR)/pack.o
-else
+else ifeq ($(testname), multiple_tiles_eltwise_test)
+	MULTIPLE_OPS:=-DMULTIPLE_OPS
+	OPTIONS_UNPACK:=-DKERN_CNT=$(unpack_kern_cnt) 
+	OPTIONS_UNPACK+=-DKERNS=$(unpack_kerns) 
+	OPTIONS_UNPACK+=-DUNPACK_A_ADDR_CNT=$(unpack_a_addr_cnt)
+	OPTIONS_UNPACK+=-DUNPACK_B_ADDR_CNT=$(unpack_b_addr_cnt)
+	OPTIONS_UNPACK+=-DUNPACK_A_ADDRS=$(unpack_a_addrs)
+	OPTIONS_UNPACK+=-DUNPACK_B_ADDRS=$(unpack_b_addrs)
+	OPTIONS_UNPACK+=-DTILE_SIZE=1024
+	OPTIONS_MATH:=-DKERN_CNT=$(math_kern_cnt) 
+	OPTIONS_MATH+=-DKERNS=$(math_kerns) 
+	OPTIONS_PACK:=-DKERN_CNT=$(pack_kern_cnt) 
+	OPTIONS_PACK+=-DKERNS=$(pack_kerns) 
+	OPTIONS_PACK+=-DPACK_ADDR_CNT=$(pack_addr_cnt) 
+	OPTIONS_PACK+=-DPACK_ADDRS=$(pack_addrs) 
+    LINK_OBJECTS = $(BUILD_DIR)/unpack.o $(BUILD_DIR)/math.o $(BUILD_DIR)/pack.o
+else	
 	MULTIPLE_OPS= 
 	LINK_OBJECTS= 
 	OPTIONS_UNPACK= 
