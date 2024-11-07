@@ -389,6 +389,40 @@ inline void cfg_reg_rmw_tensix(uint32_t val)
     }
 }
 
+template <uint CfgAddr32, uint Shamt, uint Mask, uint Val>
+inline void cfg_reg_rmw_tensix()
+{
+    uint32_t wrdata = Val<<Shamt;
+    constexpr uint8_t mask_b0 = Mask & 0xff;
+
+    if constexpr (mask_b0!=0){
+        uint8_t data_b0 = wrdata & 0xff;
+        TTI_RMWCIB0(mask_b0, data_b0, CfgAddr32);
+    }
+    wrdata>>=8;
+    constexpr uint8_t mask_b1 = (Mask>>8) & 0xff;
+
+    if constexpr (mask_b1!=0){
+        uint8_t data_b1 = (wrdata) & 0xff;
+        TTI_RMWCIB1(mask_b1, data_b1, CfgAddr32);
+    }
+
+    wrdata>>=8;
+    constexpr uint8_t mask_b2 = (Mask>>16) & 0xff;
+
+    if constexpr (mask_b2!=0){
+        uint8_t data_b2 = (wrdata) & 0xff;
+        TTI_RMWCIB2(mask_b2, data_b2, CfgAddr32);
+    }
+
+    wrdata>>=8;
+    constexpr uint8_t mask_b3 = (Mask>>24) & 0xff;
+    if constexpr (mask_b3!=0){
+        uint8_t data_b3 = (wrdata) & 0xff;
+        TTI_RMWCIB3(mask_b3, data_b3, CfgAddr32);
+    }
+}
+
 inline void mailbox_write(const uint8_t thread, const uint32_t data)
 {
     mailbox_base[thread + 1][0] = data;

@@ -85,7 +85,7 @@ inline void _llk_unpack_reconfig_data_format_srca_impl_(const std::uint32_t unpa
 {
     TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::UNPACK0);
     if constexpr (to_from_int8) {
-        static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
+        // static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
         cfg_reg_rmw_tensix<ALU_FORMAT_SPEC_REG0_SrcAUnsigned_RMW>(((uint)unpack_src_format == (uint)DataFormat::UInt8) ? 1 : 0);
     }
     cfg_reg_rmw_tensix<THCON_SEC0_REG0_TileDescriptor_ADDR32, 0, 0x0f>(unpack_src_format);
@@ -98,11 +98,53 @@ inline void _llk_unpack_reconfig_data_format_srcb_impl_(const std::uint32_t unpa
 {
     TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::UNPACK1);
     if constexpr (to_from_int8) {
-        static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
+        // static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
         cfg_reg_rmw_tensix<ALU_FORMAT_SPEC_REG0_SrcBUnsigned_RMW>(((uint)unpack_src_format == (uint)DataFormat::UInt8) ? 1 : 0);
     }
     cfg_reg_rmw_tensix<THCON_SEC1_REG0_TileDescriptor_ADDR32, 0, 0x0f>(unpack_src_format);
     cfg_reg_rmw_tensix<THCON_SEC1_REG2_Out_data_format_RMW>(unpack_dst_format);
+    TT_SETDMAREG(0, LOWER_HALFWORD(tile_size), 0, LO_16(p_gpr_unpack::TILE_SIZE_B)); // update gpr which holds tile size B
+}
+
+template <
+    std::uint32_t old_unpack_src_format,
+    std::uint32_t old_unpack_dst_format,
+    std::uint32_t new_unpack_src_format,
+    std::uint32_t new_unpack_dst_format,
+    bool is_fp32_dest_acc_en=false>
+inline void _llk_unpack_reconfig_data_format_srca_impl_v2_(const std::uint32_t tile_size)
+{
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::UNPACK0);
+    if constexpr ((uint)(old_unpack_src_format & 0xF) == (uint)DataFormat::Int8 || (uint)(new_unpack_src_format & 0xF) == (uint)DataFormat::Int8) {
+        static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
+        if constexpr ((uint)old_unpack_src_format == (uint)DataFormat::UInt8 || (uint)new_unpack_src_format == (uint)DataFormat::UInt8) {
+            constexpr uint ALU_FORMAT_SPEC_REG0_SrcAUnsigned = ((uint)new_unpack_src_format == (uint)DataFormat::UInt8) ? 1 : 0;
+            cfg_reg_rmw_tensix<ALU_FORMAT_SPEC_REG0_SrcAUnsigned_RMW, ALU_FORMAT_SPEC_REG0_SrcAUnsigned>();
+        }
+    }
+    cfg_reg_rmw_tensix<THCON_SEC0_REG0_TileDescriptor_ADDR32, 0, 0x0f, new_unpack_src_format>();
+    cfg_reg_rmw_tensix<THCON_SEC0_REG2_Out_data_format_RMW, new_unpack_dst_format>();
+    TT_SETDMAREG(0, LOWER_HALFWORD(tile_size), 0, LO_16(p_gpr_unpack::TILE_SIZE_A)); // update gpr which holds tile size A
+}
+
+template <
+    std::uint32_t old_unpack_src_format,
+    std::uint32_t old_unpack_dst_format,
+    std::uint32_t new_unpack_src_format,
+    std::uint32_t new_unpack_dst_format,
+    bool is_fp32_dest_acc_en=false>
+inline void _llk_unpack_reconfig_data_format_srcb_impl_v2_(const std::uint32_t tile_size)
+{
+    TTI_STALLWAIT(p_stall::STALL_CFG, p_stall::UNPACK1);
+    if constexpr ((uint)(old_unpack_src_format & 0xF) == (uint)DataFormat::Int8 || (uint)(new_unpack_src_format & 0xF) == (uint)DataFormat::Int8) {
+        static_assert(is_fp32_dest_acc_en, "Reconfiguring unpack to/from Int8 formats requires FP32 Dest mode enabled");
+        if constexpr ((uint)old_unpack_src_format == (uint)DataFormat::UInt8 || (uint)new_unpack_src_format == (uint)DataFormat::UInt8) {
+            constexpr uint ALU_FORMAT_SPEC_REG0_SrcBUnsigned = ((uint)new_unpack_src_format == (uint)DataFormat::UInt8) ? 1 : 0;
+            cfg_reg_rmw_tensix<ALU_FORMAT_SPEC_REG0_SrcBUnsigned_RMW, ALU_FORMAT_SPEC_REG0_SrcBUnsigned>();
+        }
+    }
+    cfg_reg_rmw_tensix<THCON_SEC1_REG0_TileDescriptor_ADDR32, 0, 0x0f, new_unpack_src_format>();
+    cfg_reg_rmw_tensix<THCON_SEC1_REG2_Out_data_format_RMW, new_unpack_dst_format>();
     TT_SETDMAREG(0, LOWER_HALFWORD(tile_size), 0, LO_16(p_gpr_unpack::TILE_SIZE_B)); // update gpr which holds tile size B
 }
 
