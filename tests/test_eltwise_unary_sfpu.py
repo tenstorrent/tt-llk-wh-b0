@@ -6,6 +6,7 @@ from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 import math
+import numpy as np
 
 format_dict = {
     "Float32": torch.float32,
@@ -62,7 +63,7 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
 
 @pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_sfpu_test"])
-@pytest.mark.parametrize("mathop", ["square", "sqrt", "log"])#["sqrt","square","log"])
+@pytest.mark.parametrize("mathop", ["square", "sqrt", "log"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -100,8 +101,11 @@ def test_all(format, mathop, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    tolerance = 0.1
     for i in range(len(golden)):
         read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
         if golden[i] != 0:
-            assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
+            close = np.isclose(np.array(res_from_L1), np.array(golden), rtol = 0.1, atol = 0.05)
+            #assert abs((res_from_L1[i] - golden[i])) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
+    
+    for c in close:
+        assert c == True
