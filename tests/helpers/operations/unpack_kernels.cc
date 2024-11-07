@@ -11,7 +11,7 @@
         volatile uint32_t* buffer_B = (volatile uint32_t*)0x1c000;
     #else
         volatile uint32_t* buffer_A = (volatile uint32_t*)0x1a000;
-        volatile uint32_t* buffer_B = (volatile uint32_t*)(0x1a000 + UNPACK_A_ADDR_CNT*TILE_SIZE);
+        volatile uint32_t* buffer_B = (volatile uint32_t*)(0x1a000 + UNPACK_A_ADDR_CNT*TILE_SIZE_ELEMENTS);
     #endif
 
     void unpack_A_kernel(int param = 0){
@@ -24,7 +24,7 @@
     void unpack_AB_kernel(int index){
         _llk_unpack_AB_hw_configure_(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT);
         _llk_unpack_AB_init_<>();
-        _llk_unpack_AB_<>((std::uint32_t)(buffer_A + index*TILE_SIZE)/16-1,(std::uint32_t)(buffer_B + index*TILE_SIZE)/16-1);
+        _llk_unpack_AB_<>((std::uint32_t)(buffer_A + index*TILE_SIZE_ELEMENTS)/16-1,(std::uint32_t)(buffer_B + index*TILE_SIZE_ELEMENTS)/16-1);
     }
     #else
     void unpack_AB_kernel(int param = 0){

@@ -43,7 +43,7 @@ else ifeq ($(testname), multiple_tiles_eltwise_test)
 	OPTIONS_UNPACK+=-DUNPACK_B_ADDR_CNT=$(unpack_b_addr_cnt)
 	OPTIONS_UNPACK+=-DUNPACK_A_ADDRS=$(unpack_a_addrs)
 	OPTIONS_UNPACK+=-DUNPACK_B_ADDRS=$(unpack_b_addrs)
-	OPTIONS_UNPACK+=-DTILE_SIZE=1024
+	OPTIONS_UNPACK+=-DTILE_SIZE_ELEMENTS=1024
 	OPTIONS_MATH:=-DKERN_CNT=$(math_kern_cnt) 
 	OPTIONS_MATH+=-DKERNS=$(math_kerns) 
 	OPTIONS_PACK:=-DKERN_CNT=$(pack_kern_cnt) 

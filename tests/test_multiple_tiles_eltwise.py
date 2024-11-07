@@ -25,8 +25,9 @@ format_args_dict = {
 
 
 def generate_stimuli(stimuli_format, tile_cnt):
-    srcA = torch.rand(1024*tile_cnt, dtype=format_dict[stimuli_format]) + 0.5
-    srcB = torch.rand(1024*tile_cnt, dtype=format_dict[stimuli_format]) + 0.5
+    if(stimuli_format == "Float16" or stimuli_format == "Float16_b"):
+        srcA = torch.rand(1024*tile_cnt, dtype=format_dict[stimuli_format]) + 0.5
+        srcB = torch.rand(1024*tile_cnt, dtype=format_dict[stimuli_format]) + 0.5
     
     return srcA, srcB
 
@@ -101,12 +102,12 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
     golden = generate_golden(mathop,src_A,src_B,format)
     write_stimuli_to_l1(src_A,src_B,format,tile_cnt)
 
-    # TODO: PARAMETRIZE UNPACS
     make_cmd = f"make --silent format={format_args_dict[format]} testname={testname} machine={machine}"
     make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
     make_cmd += " math_kern_cnt="+ str(len(math_kernels))+ " math_kerns="+math_kerns_formatted
     make_cmd += " pack_kern_cnt="+ str(len(pack_kernels))+ " pack_kerns="+pack_kerns_formatted
     make_cmd += " pack_addr_cnt="+ str(len(pack_addresses))+ " pack_addrs="+pack_addresses_formatted
+    make_cmd += " unpack_a_addr_cnt="+str(tile_cnt)
 
     os.system(make_cmd)
 
@@ -119,4 +120,18 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    
+    #check resluts from multiple tiles
+
+    read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
+    read_data = read_words_from_device("18-18", pack_start_address, word_count=read_words_cnt*tile_cnt)
+    read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
+    res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
+
+    chunk_size = 512
+    res_sublists = [res_from_L1[i:i + chunk_size] for i in range(0, len(res_from_L1), chunk_size)]
+
+    tolerance = 0.1
+    for sublist in res_sublists:
+        for i in range(len(sublist)):  
+            if golden[i] != 0:
+                assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"failed on index: {i}"
