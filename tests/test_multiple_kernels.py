@@ -59,7 +59,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
-pack_addresses = [0x1a000,0x1d000, 0x1e000, 0x1f000, 0x2000, 0x2100, 0x2200, 0x2300, 0x2400, 0x2500]
+pack_addresses = [0x1a000,0x1d000, 0x1e000, 0x1f000, 0x20000, 0x21000, 0x22000, 0x23000, 0x24000, 0x25000]
 
 
 @pytest.mark.parametrize("length", range(1,len(pack_addresses)+1))
