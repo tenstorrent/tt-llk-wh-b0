@@ -3,7 +3,7 @@ import os
 import glob
 
 def run_all_tests(test_files):
-    result = pytest.main(test_files + ['--cov=.', '--cov-report=term', '-rA', '-vv'])
+    result = pytest.main(test_files + ['--cov=.', '--cov-report=term'])
 
 if __name__ == '__main__':
     test_files = glob.glob('test_*.py')
