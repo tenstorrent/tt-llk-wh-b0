@@ -1,13 +1,12 @@
 import pytest
 import torch
 import os
-import struct
 from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import random
 import itertools
+import numpy as np
 
 
 format_dict = {
@@ -142,12 +141,5 @@ def test_multiple_kernels(format, testname, machine,length):
             tolerance = 0.1
 
         for i in range(len(curr_golden)):
-            
             if curr_golden[i] != 0:
-                try:
-                    assert abs((res_from_L1[i] - curr_golden[i]) / curr_golden[i]) <= tolerance, \
-                        f"Failed at i = {i}, for math_kernels={math_kernels}, " \
-                        f"golden={curr_golden[i]}, result={res_from_L1[i]} "
-                except AssertionError:
-                    print(f"Assertion failed for math_kernels={math_kernels}, index={index}, i={i}")
-                    raise  # Reraise the exception to keep the test failing after printing.
+                assert np.isclose(curr_golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)

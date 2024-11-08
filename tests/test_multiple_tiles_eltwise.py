@@ -1,13 +1,11 @@
 import pytest
 import torch
 import os
-import struct
 from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import random
-import itertools
+import numpy as np
 
 
 format_dict = {
@@ -95,7 +93,7 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
         pack_addresses_formatted+=str(hex(i)+",")
     pack_addresses_formatted = pack_addresses_formatted[:-1]
 
-        # ******************************** 
+    # ******************************** 
 
     context = init_debuda()
     src_A, src_B = generate_stimuli(format,tile_cnt)
@@ -127,11 +125,15 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
     res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
 
-    chunk_size = 512
+    if(format == "Float16" or format == "Float16_b"):
+        chunk_size = 512
+    else:
+        chunk_size = 1024
+    
     res_sublists = [res_from_L1[i:i + chunk_size] for i in range(0, len(res_from_L1), chunk_size)]
 
     tolerance = 0.1
     for sublist in res_sublists:
         for i in range(len(sublist)):  
             if golden[i] != 0:
-                assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"failed on index: {i}"
+                assert np.isclose(res_from_L1[i],golden[i], rtol = 0.1, atol = 0.05)

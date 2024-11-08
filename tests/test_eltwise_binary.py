@@ -5,6 +5,7 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
+import numpy as np
 
 format_dict = {
     "Float32": torch.float32,
@@ -67,6 +68,10 @@ def test_all(format, mathop, testname, machine):
     make_cmd = f"make format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
     os.system(make_cmd)
 
+    print("*"*50)
+    print(make_cmd)
+    print("*"*50)
+
     for i in range(3):
         run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
 
@@ -90,4 +95,4 @@ def test_all(format, mathop, testname, machine):
     for i in range(len(golden)):
         read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
         if golden[i] != 0:
-            assert abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
+            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)

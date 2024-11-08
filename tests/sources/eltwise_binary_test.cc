@@ -22,6 +22,7 @@ uint32_t pack_sync_tile_dst_ptr = 0;
 volatile uint32_t tt_l1_ptr l1_buffer[16] __attribute__ ((section (".text#"))) __attribute__ ((aligned (16)));
 
 #ifdef LLK_TRISC_UNPACK
+#undef MULTIPLE_OPS
 
 #include "llk_unpack_AB.h"
 #include "llk_unpack_common.h"

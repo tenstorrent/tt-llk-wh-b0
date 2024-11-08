@@ -102,10 +102,5 @@ def test_all(format, mathop, testname, machine):
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
     for i in range(len(golden)):
-        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
         if golden[i] != 0:
-            close = np.isclose(np.array(res_from_L1), np.array(golden), rtol = 0.1, atol = 0.05)
-            #assert abs((res_from_L1[i] - golden[i])) <= tolerance, f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
-    
-    for c in close:
-        assert c == True
+            assert np.isclose(res_from_L1[i], golden[i], rtol = 0.1, atol = 0.05), f"failed at index: {i}"
