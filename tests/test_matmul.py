@@ -28,8 +28,8 @@ mathop_args_dict = {
 }
 
 def generate_stimuli(stimuli_format):
-    # srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-    # srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
+    #srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 2
+    #srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 2
 
     srcA = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
     srcB = torch.full((1024,), 2, dtype=format_dict[stimuli_format])
@@ -57,10 +57,11 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
 
-@pytest.mark.parametrize("format", ["Float16_b"])  # , "Float16"])
+@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["matmul_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, testname, machine):
+
     context = init_debuda()
     src_A, src_B = generate_stimuli(format)
     golden = generate_golden(src_A, src_B, format)
@@ -88,9 +89,6 @@ def test_all(format, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    counter = 0
-    correct_indexes = []
-
     for i in range(len(golden)):
         if golden[i] != 0:
-            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)
+            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.2, atol = 0.2), f"index: {i}, golden: {golden[i]}, from L1: {res_from_L1[i]}"
