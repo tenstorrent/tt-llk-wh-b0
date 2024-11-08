@@ -57,7 +57,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format, tile_cnt):
 
 @pytest.mark.parametrize("mathop", range(1,4))
 @pytest.mark.parametrize("tile_cnt", range(1,4))
-@pytest.mark.parametrize("format", ["Float16_b"])
+@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["multiple_tiles_eltwise_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):

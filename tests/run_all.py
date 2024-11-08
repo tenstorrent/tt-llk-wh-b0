@@ -2,20 +2,18 @@ import pytest
 import os
 import glob
 
-def run_test_file(file_path):
-    result = pytest.main([file_path, '--tb=short'])
-    return result
+def run_all_tests(test_files):
+    result = pytest.main(test_files + ['--cov=.', '--cov-report=term', '-rA', '-vv'])
 
 if __name__ == '__main__':
-    results = {}
-    test_files = glob.glob('test_*.py')  # Get all test files in the current directory
+    test_files = glob.glob('test_*.py')
+    os.system("/home/software/syseng/wh/tt-smi -wr 0")
+    
+    exit_code = run_all_tests(test_files)
 
-    for test_file in test_files:
-        os.system("/home/software/syseng/wh/tt-smi -wr 0")
-        results[test_file] = run_test_file(test_file)
-
-    total_passed = sum(1 for result in results.values() if result == 0)
-    total_failed = len(test_files) - total_passed
-
-    print(f"Total tests passed: {total_passed}")
-    print(f"Total tests failed: {total_failed}")
+    if exit_code == pytest.ExitCode.OK:
+        print("All tests passed!")
+    elif exit_code == pytest.ExitCode.TESTS_FAILED:
+        print("Some tests failed.")
+    else:
+        print("An unexpected error occurred.")
