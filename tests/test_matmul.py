@@ -5,6 +5,7 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
+import numpy as np
 
 format_dict = {
     "Float32": torch.float32,
@@ -42,7 +43,7 @@ def generate_golden(operand1, operand2, data_format):
     A_reshaped = A_float.view(32, 32)
     B_reshaped = B_float.view(32, 32)
 
-    result = torch.matmul(A_reshaped, B_reshaped)
+    result = torch.matmul(B_reshaped, A_reshaped)
 
     result = result.view(-1)
 
@@ -90,20 +91,6 @@ def test_all(format, testname, machine):
     counter = 0
     correct_indexes = []
 
-    print(res_from_L1)
-
-    tolerance = 0.1
     for i in range(len(golden)):
-        read_word = hex(read_words_from_device("18-18", 0x1a000 + (i // 2) * 4, word_count=1)[0])
         if golden[i] != 0:
-            if( abs((res_from_L1[i] - golden[i]) / golden[i]) <= tolerance):
-                counter += 1
-                correct_indexes.append(i)
-            # else: 
-            #     log = f"i = {i}, {golden[i]}, {res_from_L1[i]} {read_word}"
-            #     print(log)
-
-    print("*"*50)
-    print(correct_indexes)
-    print("*"*50)
-    print(counter)
+            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)

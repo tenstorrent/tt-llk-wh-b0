@@ -74,12 +74,6 @@ def test_multiple_kernels(format, testname, machine,length):
     math_kernels_list = generate_math_kernels(length)
     math_kernels_list = [list(kernel) for kernel in math_kernels_list]
 
-    print("*"*50)
-    print(math_kernels_list)
-    print(unpack_kernels)
-    print(pack_kernels)
-    print("*"*50)
-
     for math_kernels in math_kernels_list:
 
         # *********** formatting kernels
@@ -137,8 +131,6 @@ def test_multiple_kernels(format, testname, machine,length):
 
             assert len(res_from_L1) == len(curr_golden)
             print("Checking all elements of golden at index: ", index)
-
-            tolerance = 0.1
 
         for i in range(len(curr_golden)):
             if curr_golden[i] != 0:
