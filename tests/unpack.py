@@ -33,7 +33,6 @@ def unpack_bfp8_tile(packed_list):
         exponents.append(packed_list[i])
 
     packed_list = packed_list[64:]  # Remove the first 64 bytes
-
     for i in range(1024):
         block[i % 16].append(packed_list[i])
 
@@ -47,6 +46,8 @@ def unpack_bfp8_tile(packed_list):
             merged_number = (sign << 15) | (exponents[i] << 7) | (block[j][i] & 0x7F)
             merged_number_bytes = int_to_bytes_list(merged_number)[::-1]
             merged_number_bytes = [merged_number_bytes[1], merged_number_bytes[0],0,0]
+            # if((i==0) and (j<5)):
+            #     print(f"{YELLOW}{merged_number_bytes}{RESET}")
             result.append(bytes_to_bfloat16(merged_number_bytes))
 
     return result

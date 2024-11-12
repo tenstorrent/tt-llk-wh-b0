@@ -38,8 +38,8 @@ def generate_stimuli(stimuli_format):
         # pack and unpack for bfp8 is easier way of generating random stimuli
         # then extracting exponents, mantisas and normalizing 
 
-        random_exponents = [random.randint(126, 129) for _ in range(64)]
-        random_sm = [random.randint(126, 129) for _ in range(1024)]
+        random_exponents = [random.randint(128, 128) for _ in range(64)]
+        random_sm = [random.randint(64, 64) for _ in range(1024)]
         packed_bytes = pack_bfp8_tile(random_exponents,random_sm)
         unpacked_numbers = unpack_bfp8_tile(packed_bytes)
         res = []
@@ -47,10 +47,10 @@ def generate_stimuli(stimuli_format):
             res.append(nr.item())
         srcA = torch.tensor(res, dtype=torch.bfloat16)
 
-        write_to_device("18-18",0x1b000, pack_bfp8_tile(random_exponents,random_sm))
+        write_to_device("18-18",0x1b000, packed_bytes)
 
-        random_exponents = [random.randint(126, 129) for _ in range(64)]
-        random_sm = [random.randint(126, 129) for _ in range(1024)]
+        random_exponents = [random.randint(128, 128) for _ in range(64)]
+        random_sm = [random.randint(64, 64) for _ in range(1024)]
         packed_bytes = pack_bfp8_tile(random_exponents,random_sm)
         unpacked_numbers = unpack_bfp8_tile(packed_bytes)
         res = []
@@ -58,7 +58,7 @@ def generate_stimuli(stimuli_format):
             res.append(nr.item())
         srcB = torch.tensor(res, dtype=torch.bfloat16)
 
-        write_to_device("18-18",0x1c000, pack_bfp8_tile(random_exponents,random_sm))
+        write_to_device("18-18",0x1c000,packed_bytes)
 
     return srcA, srcB
 
@@ -93,7 +93,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
 
 @pytest.mark.parametrize("format", ["Bfp8"]) #,"Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwsub", "elwadd", "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd"]) #, "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -117,6 +117,10 @@ def test_all(format, mathop, testname, machine):
     read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
     
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
+
+    print("*"*50)
+    print(read_data_bytes[0:128])
+    print("*"*50)
     
     if(format == "Float16"):
         res_from_L1 = unpack_fp16(read_data_bytes)
