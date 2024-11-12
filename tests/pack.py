@@ -35,3 +35,15 @@ def pack_fp16(torch_tensor):
         half2 = float16_to_bytes(torch_tensor[i + 1])
         packed_bytes.extend([half1[0:2][::-1], half2[0:2][::-1]][::-1])  # reverse endian
     return flatten_list(packed_bytes)
+
+def pack_bfp8_tile(exponents, sign_mantisa):
+    # exponents -> 64 bytes
+    # sign_mantissla -> 64 blocks of 16 elements
+    # in total 1024 + 64 bytes
+    packed_bytes = []
+    for exp in exponents:
+        packed_bytes.append(exp)
+    for sm in sign_mantisa:
+        packed_bytes.append(sm)
+
+    return packed_bytes
