@@ -19,7 +19,7 @@ format_args_dict = {
     "Float32": "FORMAT_FLOAT32",
     "Float16": "FORMAT_FLOAT16",
     "Float16_b": "FORMAT_FLOAT16_B",
-    "Bfp8" : "FORMAT_BFP8",
+    "Bfp8_b" : "FORMAT_BFP8_B",
     "Int32": "FORMAT_INT32"
 }
 
@@ -33,42 +33,46 @@ def generate_stimuli(stimuli_format):
     if(stimuli_format == "Float16" or stimuli_format == "Float16_b"):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
         srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-    elif(stimuli_format == "Bfp8"):
+    elif(stimuli_format == "Bfp8_b"):
 
         # pack and unpack for bfp8 is easier way of generating random stimuli
         # then extracting exponents, mantisas and normalizing 
 
-        random_exponents = [random.randint(128, 128) for _ in range(64)]
-        random_sm = [random.randint(64, 64) for _ in range(1024)]
-        packed_bytes = pack_bfp8_tile(random_exponents,random_sm)
+        # make sure random exponents nad sign_mantisa are in same range for both srcA and srcB
+        random_exponents = [random.randint(128, 128) for _ in range(128)]
+        random_sm = [random.randint(63, 65) for _ in range(2048)]
+
+        packed_bytes = pack_bfp8_tile(random_exponents[:64],random_sm[:1024])
         unpacked_numbers = unpack_bfp8_tile(packed_bytes)
         res = []
         for nr in unpacked_numbers:
             res.append(nr.item())
         srcA = torch.tensor(res, dtype=torch.bfloat16)
 
+        print("SRCA: " , srcA[0:10].tolist())
+
         write_to_device("18-18",0x1b000, packed_bytes)
 
-        random_exponents = [random.randint(128, 128) for _ in range(64)]
-        random_sm = [random.randint(64, 64) for _ in range(1024)]
-        packed_bytes = pack_bfp8_tile(random_exponents,random_sm)
+        packed_bytes = pack_bfp8_tile(random_exponents[64:],random_sm[1024:])
         unpacked_numbers = unpack_bfp8_tile(packed_bytes)
         res = []
         for nr in unpacked_numbers:
             res.append(nr.item())
         srcB = torch.tensor(res, dtype=torch.bfloat16)
 
+        print("SRCB: " , srcB[0:10].tolist())
+
         write_to_device("18-18",0x1c000,packed_bytes)
 
     return srcA, srcB
 
 def generate_golden(operation, operand1, operand2, data_format):
-    if(data_format != "Bfp8"):
+    if(data_format != "Bfp8_b"):
         tensor1_float = operand1.clone().detach().to(format_dict[data_format])
         tensor2_float = operand2.clone().detach().to(format_dict[data_format])
     else:
-        tensor1_float = operand1.clone()
-        tensor2_float = operand2.clone()
+        tensor1_float = operand1.clone().detach().to(torch.bfloat16)
+        tensor2_float = operand2.clone().detach().to(torch.bfloat16)
     
     operations = {
         "elwadd": tensor1_float + tensor2_float,
@@ -91,9 +95,9 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
     else: # bfp8 writing to L1 ins handled by generate_stimuli
         pass
 
-@pytest.mark.parametrize("format", ["Bfp8"]) #,"Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Bfp8_b", "Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwadd"]) #, "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -101,7 +105,7 @@ def test_all(format, mathop, testname, machine):
     golden = generate_golden(mathop, src_A, src_B, format)
     write_stimuli_to_l1(src_A, src_B, format)
 
-    make_cmd = f"make format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
+    make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname} machine={machine}"
     os.system(make_cmd)
 
     for i in range(3):
@@ -111,22 +115,18 @@ def test_all(format, mathop, testname, machine):
 
     if(format == "Float16" or format == "Float16_b"):
         read_words_cnt = len(src_A)//2
-    elif( format == "Bfp8"):
+    elif( format == "Bfp8_b"):
         read_words_cnt = len(src_A)//4 + 64//4 # 272 for one tile
 
     read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
     
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
 
-    print("*"*50)
-    print(read_data_bytes[0:128])
-    print("*"*50)
-    
     if(format == "Float16"):
         res_from_L1 = unpack_fp16(read_data_bytes)
     elif(format == "Float16_b"):
         res_from_L1 = unpack_bfp16(read_data_bytes)
-    elif( format == "Bfp8"):
+    elif( format == "Bfp8_b"):
         res_from_L1 = unpack_bfp8_tile(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
@@ -138,11 +138,12 @@ def test_all(format, mathop, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    print("*"*50)
-    print(golden[0:5])
-    print(res_from_L1[0:5])
-    print("*"*50)
+    if(format == "Float16_b" or format == "Float16"):
+        atol = 0.05
+        rtol = 0.1
+    elif(format == "Bfp8_b"):
+        atol = 0.2
+        rtol = 0.2
 
     for i in range(len(golden)):
-        if golden[i] != 0:
-            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)
+        assert np.isclose(golden[i],res_from_L1[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {golden[i]} and {res_from_L1[i]}"

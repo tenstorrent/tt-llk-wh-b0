@@ -15,8 +15,8 @@
     #ifdef FORMAT_INT32
         #define DATA_FORMAT (uint32_t)DataFormat::Int32
     #endif
-    #ifdef FORMAT_BFP8
-        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8 
+    #ifdef FORMAT_BFP8_B
+        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8_b 
     #endif
 
 #endif
@@ -35,8 +35,8 @@
     #ifdef FORMAT_INT32
         #define DATA_FORMAT (uint32_t)DataFormat::Int32
     #endif
-    #ifdef FORMAT_BFP8
-        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8 
+    #ifdef FORMAT_BFP8_B
+        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8_b 
     #endif
 
     #ifdef ELTWISE_BINARY_ADD
@@ -78,8 +78,8 @@
     #ifdef FORMAT_INT32
         #define DATA_FORMAT (uint32_t)DataFormat::Int32
     #endif
-    #ifdef FORMAT_BFP8
-        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8 
+    #ifdef FORMAT_BFP8_B
+        #define DATA_FORMAT (uint32_t)DataFormat::Bfp8_b 
     #endif
 
 #endif
