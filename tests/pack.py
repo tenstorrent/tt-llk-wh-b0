@@ -2,6 +2,7 @@
 
 import struct
 import torch
+import struct
 
 def flatten_list(sublists):
     return [item for sublist in sublists for item in sublist]
@@ -20,6 +21,12 @@ def bfloat16_to_bytes(number):
     res_masked = number_unpacked & 0xFFFF0000
     return int_to_bytes_list(res_masked)
 
+def bfloat16_to_binary(value):
+    float_value = value.to(torch.float32).item()
+    bfloat16_bytes = bfloat16_to_bytes(float_value)
+    #print(f"{format(bfloat16_bytes[0],'08b')}{format(bfloat16_bytes[1],'08b')}")
+    return f"{bfloat16_bytes[0]:08b}{bfloat16_bytes[1]:08b}"
+
 def pack_bfp16(torch_tensor):
     packed_bytes = []
     for i in range(0, len(torch_tensor), 2):
@@ -36,14 +43,43 @@ def pack_fp16(torch_tensor):
         packed_bytes.extend([half1[0:2][::-1], half2[0:2][::-1]][::-1])  # reverse endian
     return flatten_list(packed_bytes)
 
-def pack_bfp8_tile(exponents, sign_mantisa):
-    # exponents -> 64 bytes
-    # sign_mantissla -> 64 blocks of 16 elements
-    # in total 1024 + 64 bytes
-    packed_bytes = []
-    for exp in exponents:
-        packed_bytes.append(exp)
-    for sm in sign_mantisa:
-        packed_bytes.append(sm)
+def float_to_bfp8_block(block):
+    exponents = []
+    mantissas = []
+    max_exponent = -float('inf')
+    
+    for value in block:
+        binary_str = bfloat16_to_binary(value)
+        exponent = int(binary_str[1:9], 2)
+        mantissa = int(binary_str[9:], 2)
+        exponents.append(exponent)
+        mantissas.append(mantissa)
+        max_exponent = max(max_exponent, exponent)
+    
+    shared_exponent = max_exponent
+    mantissas_explicit = [mantissa for mantissa in mantissas]
+    
+    bfp8_mantissas = []
+    for i in range(len(block)):
+        exponent_delta = shared_exponent - exponents[i]
+        shifted_mantissa = mantissas_explicit[i] >> (exponent_delta)
+        bfp8_mantissas.append(shifted_mantissa & 0x7F)
+    
+    return shared_exponent, bfp8_mantissas
 
-    return packed_bytes
+def pack_bfp8_b(tensor, block_size=16):
+    flattened_tensor = tensor.flatten()
+    num_blocks = len(flattened_tensor) // block_size 
+    blocks = [flattened_tensor[i * block_size:(i + 1) * block_size] for i in range(num_blocks)]
+    
+    exponents = []
+    mantissas = []
+    
+    for block in blocks:
+        shared_exponent, bfp8_mantissas = float_to_bfp8_block(block)
+        exponents.append(shared_exponent)
+        mantissas.extend(bfp8_mantissas)
+    
+    bfp8_result = exponents + mantissas
+    
+    return bfp8_result

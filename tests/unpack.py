@@ -2,6 +2,7 @@
 
 import struct
 import torch
+import struct
 
 def int_to_bytes_list(n):
     binary_str = bin(n)[2:].zfill(32)
@@ -23,31 +24,30 @@ def unpack_fp16(packed_list):
 def unpack_bfp16(packed_list):
     return [bytes_to_bfloat16(packed_list[i:i + 2]).item() for i in range(0, len(packed_list), 2)]
 
-def unpack_bfp8_tile(packed_list):
-    result = []
-    exponents = []
+def bfp8_to_float_block(exponent, bfp8_mantissas):
+    bfloat16_values = []
+    
+    for mantissa in bfp8_mantissas:
+        sign_mantissa = str(format(mantissa, '08b'))
+        sign = str(sign_mantissa[0])
+        mantissa_value = sign_mantissa[1:]
+        exp_bin = str(format(exponent, '08b'))
+        full_number = f"{sign}{exp_bin}{mantissa_value}"
+        full_number = int(full_number, 2)
+        full_number_bytes = int_to_bytes_list(full_number)
+        bfloat16_values.append(bytes_to_bfloat16([full_number_bytes[2], full_number_bytes[3], 0, 0]))
 
-    block = [[] for _ in range(64)]
+    return bfloat16_values
 
-    for i in range(64):
-        exponents.append(packed_list[i])
-
-    packed_list = packed_list[64:]  # Remove the first 64 bytes
-    for i in range(1024):
-        block[i % 16].append(packed_list[i])
-
-    assert len(block) == 64
-
-    # Rebuild the numbers using exponents and the sign-mantissa data
-    for i in range(64):
-        for j in range(16):
-            sign = block[j][i] >> 7  # Extract the sign bit
-            # Merge the sign, exponent, and mantissa correctly
-            merged_number = (sign << 15) | (exponents[i] << 7) | (block[j][i] & 0x7F)
-            merged_number_bytes = int_to_bytes_list(merged_number)[::-1]
-            merged_number_bytes = [merged_number_bytes[1], merged_number_bytes[0],0,0]
-            # if((i==0) and (j<5)):
-            #     print(f"{YELLOW}{merged_number_bytes}{RESET}")
-            result.append(bytes_to_bfloat16(merged_number_bytes))
-
-    return result
+def unpack_bfp8_b(bfp8_block):
+    exponents = bfp8_block[:64]
+    mantissas = bfp8_block[64:]
+    
+    bfloat16_values = []
+    for i in range(len(exponents)):
+        exponent = exponents[i]
+        bfp8_mantissas = mantissas[i * 16:(i + 1) * 16]
+        block_bfloat16_values = bfp8_to_float_block(exponent, bfp8_mantissas)
+        bfloat16_values.extend(block_bfloat16_values)
+    
+    return torch.tensor(bfloat16_values, dtype=torch.bfloat16)

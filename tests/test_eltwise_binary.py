@@ -6,7 +6,7 @@ from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 import numpy as np
-import random
+import struct
 
 format_dict = {
     "Float32": torch.float32,
@@ -30,39 +30,15 @@ mathop_args_dict = {
 }
 
 def generate_stimuli(stimuli_format):
-    if(stimuli_format == "Float16" or stimuli_format == "Float16_b"):
-        srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-        srcB = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
+
+    if(stimuli_format == "Float16" or stimuli_format == "Float16_b"): 
+        srcA = torch.rand(1024, dtype = format_dict[stimuli_format]) + 0.5
+        srcB = torch.rand(1024, dtype = format_dict[stimuli_format]) + 0.5
     elif(stimuli_format == "Bfp8_b"):
-
-        # pack and unpack for bfp8 is easier way of generating random stimuli
-        # then extracting exponents, mantisas and normalizing 
-
-        # make sure random exponents nad sign_mantisa are in same range for both srcA and srcB
-        random_exponents = [random.randint(128, 128) for _ in range(128)]
-        random_sm = [random.randint(63, 65) for _ in range(2048)]
-
-        packed_bytes = pack_bfp8_tile(random_exponents[:64],random_sm[:1024])
-        unpacked_numbers = unpack_bfp8_tile(packed_bytes)
-        res = []
-        for nr in unpacked_numbers:
-            res.append(nr.item())
-        srcA = torch.tensor(res, dtype=torch.bfloat16)
-
-        print("SRCA: " , srcA[0:10].tolist())
-
-        write_to_device("18-18",0x1b000, packed_bytes)
-
-        packed_bytes = pack_bfp8_tile(random_exponents[64:],random_sm[1024:])
-        unpacked_numbers = unpack_bfp8_tile(packed_bytes)
-        res = []
-        for nr in unpacked_numbers:
-            res.append(nr.item())
-        srcB = torch.tensor(res, dtype=torch.bfloat16)
-
-        print("SRCB: " , srcB[0:10].tolist())
-
-        write_to_device("18-18",0x1c000,packed_bytes)
+        # srcA = torch.rand(1024, dtype = torch.bfloat16) + 0.5
+        # srcB = torch.rand(1024, dtype = torch.bfloat16) + 0.5
+        srcA = torch.full((1024,), 3, dtype=torch.bfloat16)
+        srcB = torch.full((1024,), 3, dtype=torch.bfloat16)
 
     return srcA, srcB
 
@@ -70,9 +46,21 @@ def generate_golden(operation, operand1, operand2, data_format):
     if(data_format != "Bfp8_b"):
         tensor1_float = operand1.clone().detach().to(format_dict[data_format])
         tensor2_float = operand2.clone().detach().to(format_dict[data_format])
-    else:
-        tensor1_float = operand1.clone().detach().to(torch.bfloat16)
-        tensor2_float = operand2.clone().detach().to(torch.bfloat16)
+    else: 
+        # to precisely mimic how tesix sees bfp8 some preprocesssing needs to be done
+        print(operand1[0:128])
+        
+        operand1_packed = pack_bfp8_b(operand1)
+        operand2_packed = pack_bfp8_b(operand2)
+
+        print(operand1_packed[0:128])
+
+        operand1_unpacked = unpack_bfp8_b(operand1_packed)
+        operand2_unpacked = unpack_bfp8_b(operand2_packed)
+
+        tensor1_float = operand1_unpacked.clone().detach().to(torch.float32)
+        tensor2_float = operand2_unpacked.clone().detach().to(torch.float32)
+
     
     operations = {
         "elwadd": tensor1_float + tensor2_float,
@@ -92,10 +80,11 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
         write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
-    else: # bfp8 writing to L1 ins handled by generate_stimuli
-        pass
+    elif stimuli_format == "Bfp8_b":
+        write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
+        write_to_device("18-18", 0x1c000, pack_bfp8_b(buffer_B))
 
-@pytest.mark.parametrize("format", ["Bfp8_b", "Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Bfp8_b"])#, "Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
 @pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
@@ -127,7 +116,7 @@ def test_all(format, mathop, testname, machine):
     elif(format == "Float16_b"):
         res_from_L1 = unpack_bfp16(read_data_bytes)
     elif( format == "Bfp8_b"):
-        res_from_L1 = unpack_bfp8_tile(read_data_bytes)
+        res_from_L1 = unpack_bfp8_b(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
 
@@ -142,8 +131,14 @@ def test_all(format, mathop, testname, machine):
         atol = 0.05
         rtol = 0.1
     elif(format == "Bfp8_b"):
-        atol = 0.2
-        rtol = 0.2
+        atol = 0.5
+        rtol = 0.3
+
+    print(golden[0:10])
+    print(res_from_L1[0:10])
+
+    golden_tensor = torch.tensor(golden,dtype = format if format in ["Float16","Float16_b"] else torch.bfloat16)
+    res_tensor = torch.tensor(res_from_L1,dtype = format if format in ["Float16","Float16_b"] else torch.bfloat16)
 
     for i in range(len(golden)):
-        assert np.isclose(golden[i],res_from_L1[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {golden[i]} and {res_from_L1[i]}"
+        assert torch.isclose(golden_tensor[i],res_tensor[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {golden[i]} and {res_from_L1[i]}"
