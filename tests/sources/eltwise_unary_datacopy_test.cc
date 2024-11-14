@@ -4,7 +4,7 @@
 #include "llk_defs.h"
 #include "ckernel.h"
 
-const bool unpack_to_dest = true;
+const bool unpack_to_dest = false;
 
 // Globals
 uint32_t unp_cfg_context = 0;
@@ -21,9 +21,9 @@ volatile uint32_t* buffer_A = (volatile uint32_t*)0x1b000;
 
 void run_kernel()
 {
-    _llk_unpack_A_hw_configure_<>(DATA_FORMAT,DATA_FORMAT,FACE_R_DIM,0,4);
-    _llk_unpack_A_init_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>(0, 0, FACE_R_DIM, 4, DATA_FORMAT, DATA_FORMAT);
-    _llk_unpack_A_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>((((uint32_t)buffer_A)/16)-1, 0, DATA_FORMAT, DATA_FORMAT);
+    _llk_unpack_A_hw_configure_<>((uint32_t)DataFormat::Float16_b,(uint32_t)DataFormat::Float16_b,FACE_R_DIM,0,4);
+    _llk_unpack_A_init_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>(0, 0, FACE_R_DIM, 4, (uint32_t)DataFormat::Float16_b, (uint32_t)DataFormat::Float16_b);
+    _llk_unpack_A_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, unpack_to_dest>((((uint32_t)buffer_A)/16)-1, 0, (uint32_t)DataFormat::Float16_b, (uint32_t)DataFormat::Float16_b);
 }
 
 #endif

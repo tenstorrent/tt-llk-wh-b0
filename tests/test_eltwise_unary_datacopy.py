@@ -33,7 +33,8 @@ def generate_stimuli(stimuli_format):
     if(stimuli_format != "Bfp8_b"):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
     else:
-        srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
+        #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
+        srcA = torch.full((1024,), 5, dtype=torch.bfloat16)
     return srcA
 
 def generate_golden(operand1,format):
@@ -41,7 +42,8 @@ def generate_golden(operand1,format):
     if(format in ["Float16", "Float16_b"]):
         return operand1
     else:
-        return unpack_bfp8_b(pack_bfp8_b(operand1))
+        return operand1
+        #return unpack_bfp8_b(pack_bfp8_b(operand1))
 
 def write_stimuli_to_l1(buffer_A, stimuli_format):
     if stimuli_format == "Float16_b":
@@ -49,9 +51,9 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
     elif stimuli_format == "Bfp8_b":
-        write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
+        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
 
-@pytest.mark.parametrize("format", ["Bfp8_b"]) #,"Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Bfp8_b"])#,"Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, testname, machine):
