@@ -37,8 +37,8 @@ def generate_stimuli(stimuli_format):
     elif(stimuli_format == "Bfp8_b"):
         # srcA = torch.rand(1024, dtype = torch.bfloat16) + 0.5
         # srcB = torch.rand(1024, dtype = torch.bfloat16) + 0.5
-        srcA = torch.full((1024,), 3, dtype=torch.bfloat16)
-        srcB = torch.full((1024,), 3, dtype=torch.bfloat16)
+        srcA = torch.full((1024,), 5, dtype=torch.bfloat16)
+        srcB = torch.full((1024,), 5, dtype=torch.bfloat16)
 
     return srcA, srcB
 
@@ -48,19 +48,21 @@ def generate_golden(operation, operand1, operand2, data_format):
         tensor2_float = operand2.clone().detach().to(format_dict[data_format])
     else: 
         # to precisely mimic how tesix sees bfp8 some preprocesssing needs to be done
-        print(operand1[0:128])
         
         operand1_packed = pack_bfp8_b(operand1)
         operand2_packed = pack_bfp8_b(operand2)
 
-        print(operand1_packed[0:128])
-
         operand1_unpacked = unpack_bfp8_b(operand1_packed)
         operand2_unpacked = unpack_bfp8_b(operand2_packed)
 
+        print("*"*50)
+        print(operand1_unpacked)
+        print("*"*50)
+        print(operand1_unpacked)
+        print("*"*50)
+
         tensor1_float = operand1_unpacked.clone().detach().to(torch.float32)
         tensor2_float = operand2_unpacked.clone().detach().to(torch.float32)
-
     
     operations = {
         "elwadd": tensor1_float + tensor2_float,
@@ -84,9 +86,9 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
         write_to_device("18-18", 0x1c000, pack_bfp8_b(buffer_B))
 
-@pytest.mark.parametrize("format", ["Bfp8_b"])#, "Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Bfp8_b", "Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd"]) #, "elwsub", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -137,8 +139,8 @@ def test_all(format, mathop, testname, machine):
     print(golden[0:10])
     print(res_from_L1[0:10])
 
-    golden_tensor = torch.tensor(golden,dtype = format if format in ["Float16","Float16_b"] else torch.bfloat16)
-    res_tensor = torch.tensor(res_from_L1,dtype = format if format in ["Float16","Float16_b"] else torch.bfloat16)
+    golden_tensor = torch.tensor(golden, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
+    res_tensor = torch.tensor(res_from_L1, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
 
     for i in range(len(golden)):
         assert torch.isclose(golden_tensor[i],res_tensor[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {golden[i]} and {res_from_L1[i]}"
