@@ -50,8 +50,12 @@ def float_to_bfp8_block(block):
     
     for value in block:
         binary_str = bfloat16_to_binary(value)
+        sign = binary_str[0]
+        print("sign: " , sign)
         exponent = int(binary_str[1:9], 2)
-        mantissa = int(binary_str[9:], 2)
+        mantissa = int(sign+"1"+binary_str[9:-1], 2)
+        print("sm length :" , len(str(sign)+"1"+binary_str[9:-1]), str(sign)+"1"+binary_str[9:-1])
+        print(int(sign+"1"+binary_str[9:-1], 2))
         exponents.append(exponent)
         mantissas.append(mantissa)
         max_exponent = max(max_exponent, exponent)
@@ -63,7 +67,7 @@ def float_to_bfp8_block(block):
     for i in range(len(block)):
         exponent_delta = shared_exponent - exponents[i]
         shifted_mantissa = mantissas_explicit[i] >> (exponent_delta)
-        bfp8_mantissas.append(shifted_mantissa & 0x7F)
+        bfp8_mantissas.append(shifted_mantissa & 0xFF)
     
     return shared_exponent, bfp8_mantissas
 

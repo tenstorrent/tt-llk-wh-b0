@@ -28,29 +28,20 @@ def bfp8_to_float_block(exponent, bfp8_mantissas):
     bfloat16_values = []
     exponent = exponent - 127
     for mantissa in bfp8_mantissas:
+        print("mantissa dec: ", mantissa)
         sign_mantissa = str(format(mantissa, '08b'))
-        sign = str(sign_mantissa[0])
+        sign = sign_mantissa[0]
         mantissa_value = sign_mantissa[1:]
-        print(mantissa_value,exponent)
+        print("UNPACKER: ", sign_mantissa)
         mantissa_int = int(mantissa_value[:exponent+1],2) # +1 is because according to standard . is after 1 digit, not at the beginning
-        mantissa_frac_bin  = mantissa_value[exponent+1:]
+        mantissa_frac_bin  = mantissa_value[exponent:]
         mantissa_frac = 0
         for i in range(0,len(mantissa_frac_bin)):
             if(mantissa_frac_bin[i] == '1'):
                 mantissa_frac += 1/(2**i)
 
-        print(mantissa_int, mantissa_frac)
-
-        bfloat16_values.append(mantissa_int+mantissa_frac)
-        
-        # if(mantissa_value[0] == '1'):
-        #     mantissa_value = mantissa_value[1:]
-
-        # exp_bin = str(format(exponent, '08b'))
-        # full_number = f"{sign}{exp_bin}{mantissa_value}"
-        # full_number = int(full_number, 2)
-        # full_number_bytes = int_to_bytes_list(full_number)
-        # bfloat16_values.append(bytes_to_bfloat16([full_number_bytes[2], full_number_bytes[3], 0, 0]))
+        #print(mantissa_int, mantissa_frac)
+        bfloat16_values.append(((-1)**int(sign,2))*(mantissa_int+mantissa_frac))
 
     return bfloat16_values
 

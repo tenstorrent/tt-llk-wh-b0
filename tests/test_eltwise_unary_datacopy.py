@@ -5,8 +5,7 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import math
-import numpy as np
+import random
 
 format_dict = {
     "Float32": torch.float32,
@@ -33,8 +32,13 @@ def generate_stimuli(stimuli_format):
     if(stimuli_format != "Bfp8_b"):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
     else:
+        size = 1024
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
-        srcA = torch.full((1024,), 5, dtype=torch.bfloat16)
+        srcA = torch.full((1024,), -15.0625, dtype=torch.bfloat16)
+        #integer_part = torch.randint(-50, 51, (size,))  # (size,) generates a 1D tensor
+        #fraction = torch.randint(0, 16, (size,)) / 16.0
+        #srcA = integer_part.float() + fraction  # Convert to float to add fractions
+
     return srcA
 
 def generate_golden(operand1,format):
@@ -42,8 +46,8 @@ def generate_golden(operand1,format):
     if(format in ["Float16", "Float16_b"]):
         return operand1
     else:
-        return operand1
-        #return unpack_bfp8_b(pack_bfp8_b(operand1))
+        #return operand1
+        return unpack_bfp8_b(pack_bfp8_b(operand1))
 
 def write_stimuli_to_l1(buffer_A, stimuli_format):
     if stimuli_format == "Float16_b":
@@ -51,7 +55,7 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
     elif stimuli_format == "Float16":
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
     elif stimuli_format == "Bfp8_b":
-        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
+        write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
 
 @pytest.mark.parametrize("format", ["Bfp8_b"])#,"Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
@@ -99,7 +103,7 @@ def test_all(format, testname, machine):
         rtol = 0.1
     elif(format == "Bfp8_b"):
         atol = 0.5
-        rtol = 0.3
+        rtol = 0.2
 
     print(golden[0:10])
     print(res_from_L1[0:10])
