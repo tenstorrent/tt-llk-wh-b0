@@ -33,7 +33,6 @@ def generate_stimuli(stimuli_format):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
     else:
         size = 1024
-        torch.manual_seed(42)
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
         #srcA = torch.full((size,), 15.0625, dtype=torch.bfloat16)
         integer_part = torch.randint(-3, 4, (size,))  # (size,) generates a 1D tensor
@@ -53,7 +52,7 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
     elif stimuli_format == "Bfp8_b":
         write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
 
-@pytest.mark.parametrize("format", ["Bfp8_b"])#,"Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Bfp8_b","Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, testname, machine):
