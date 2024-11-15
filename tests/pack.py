@@ -4,6 +4,13 @@ import struct
 import torch
 import struct
 
+# ANSI escape codes
+RED = "\033[31m"
+GREEN = "\033[32m"
+YELLOW = "\033[33m"
+BLUE = "\033[34m"
+RESET = "\033[0m"  # Reset to default color
+
 def flatten_list(sublists):
     return [item for sublist in sublists for item in sublist]
 
@@ -51,23 +58,33 @@ def float_to_bfp8_block(block):
     for value in block:
         binary_str = bfloat16_to_binary(value)
         sign = binary_str[0]
-        print("sign: " , sign)
+        #print("number: " , binary_str)
         exponent = int(binary_str[1:9], 2)
-        mantissa = int(sign+"1"+binary_str[9:-1], 2)
-        print("sm length :" , len(str(sign)+"1"+binary_str[9:-1]), str(sign)+"1"+binary_str[9:-1])
-        print(int(sign+"1"+binary_str[9:-1], 2))
+        #print("exponent: ", exponent - 127)
+        mantissa = binary_str[9:]
+        mantissa = sign + "1" + mantissa[:-1]
+        #print("mantissa: ", mantissa)
+        #mantissa = int(mantissa,2)
         exponents.append(exponent)
         mantissas.append(mantissa)
         max_exponent = max(max_exponent, exponent)
     
     shared_exponent = max_exponent
-    mantissas_explicit = [mantissa for mantissa in mantissas]
-    
+    #print("Shared exponent: ", shared_exponent)
+    mantissas_explicit = [mantissa[1:] for mantissa in mantissas]
+    sign_explicit = [mantissa[0] for mantissa in mantissas]
+    #print(f"{RED}{mantissas_explicit[0:10]}{RESET}")
+    #print(f"{YELLOW}{sign_explicit[0:10]}{RESET}")
+    mantissas_explicit = [int(mantissa,2) for mantissa in mantissas_explicit]
+     
     bfp8_mantissas = []
     for i in range(len(block)):
         exponent_delta = shared_exponent - exponents[i]
+        #print(f"{GREEN}{exponent_delta}{RESET}")
         shifted_mantissa = mantissas_explicit[i] >> (exponent_delta)
-        bfp8_mantissas.append(shifted_mantissa & 0xFF)
+        bfp8_mantissas.append(int(sign_explicit[i],2) << 7 | shifted_mantissa)
+        print(f"{BLUE}{format(mantissas_explicit[i],'08b')} {exponent_delta} {format(shifted_mantissa,'08b')}{RESET}")
+        print(f"{YELLOW}{format(int(sign_explicit[i],2) << 7 | shifted_mantissa,'08b')}{RESET}")
     
     return shared_exponent, bfp8_mantissas
 

@@ -34,10 +34,10 @@ def generate_stimuli(stimuli_format):
     else:
         size = 1024
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
-        srcA = torch.full((1024,), -15.0625, dtype=torch.bfloat16)
-        #integer_part = torch.randint(-50, 51, (size,))  # (size,) generates a 1D tensor
-        #fraction = torch.randint(0, 16, (size,)) / 16.0
-        #srcA = integer_part.float() + fraction  # Convert to float to add fractions
+        #srcA = torch.full((size,), 14.5, dtype=torch.bfloat16)
+        integer_part = torch.randint(-10, 11, (size,))  # (size,) generates a 1D tensor
+        fraction = torch.randint(0, 16, (size,)) / 16.0
+        srcA = integer_part.float() + fraction  # Convert to float to add fractions
 
     return srcA
 
