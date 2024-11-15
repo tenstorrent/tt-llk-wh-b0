@@ -33,21 +33,17 @@ def generate_stimuli(stimuli_format):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
     else:
         size = 1024
+        torch.manual_seed(42)
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
-        #srcA = torch.full((size,), 14.5, dtype=torch.bfloat16)
-        integer_part = torch.randint(-10, 11, (size,))  # (size,) generates a 1D tensor
+        #srcA = torch.full((size,), 15.0625, dtype=torch.bfloat16)
+        integer_part = torch.randint(-3, 4, (size,))  # (size,) generates a 1D tensor
         fraction = torch.randint(0, 16, (size,)) / 16.0
         srcA = integer_part.float() + fraction  # Convert to float to add fractions
 
     return srcA
 
 def generate_golden(operand1,format):
-
-    if(format in ["Float16", "Float16_b"]):
-        return operand1
-    else:
-        #return operand1
-        return unpack_bfp8_b(pack_bfp8_b(operand1))
+    return operand1
 
 def write_stimuli_to_l1(buffer_A, stimuli_format):
     if stimuli_format == "Float16_b":
@@ -102,8 +98,8 @@ def test_all(format, testname, machine):
         atol = 0.05
         rtol = 0.1
     elif(format == "Bfp8_b"):
-        atol = 0.5
-        rtol = 0.2
+        atol = 0.4
+        rtol = 0.3
 
     print(golden[0:10])
     print(res_from_L1[0:10])

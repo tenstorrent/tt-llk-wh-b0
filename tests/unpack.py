@@ -26,25 +26,25 @@ def unpack_bfp16(packed_list):
 
 def bfp8_to_float_block(exponent, bfp8_mantissas):
     bfloat16_values = []
-    #exponent = exponent - 127
+    exponent = exponent - 127
     for mantissa in bfp8_mantissas:
         sign_mantissa = str(format(mantissa, '08b'))
-        #print("mantissa bin: ", sign_mantissa)
-        sign = sign_mantissa[0]
-        mantissa_value = sign_mantissa[2:]
-        mantissa_value += "0"
-        bfp16_string = sign + str(format(exponent, '08b')) + mantissa_value
-        #print("UNPACKER: ", int_to_bytes_list(int(bfp16_string,2))[2:])
-        bfloat16_values.append(bytes_to_bfloat16(int_to_bytes_list(int(bfp16_string,2))[2:]))
-        # mantissa_int = int(mantissa_value[:exponent+1],2) # +1 is because according to standard . is after 1 digit, not at the beginning
-        # mantissa_frac_bin  = mantissa_value[exponent:]
-        # mantissa_frac = 0
-        # for i in range(0,len(mantissa_frac_bin)):
-        #     if(mantissa_frac_bin[i] == '1'):
-        #         mantissa_frac += 1/(2**i)
+        sign = int(sign_mantissa[0],2)
+        mantissa_value =sign_mantissa[1:]
+        int_part = mantissa_value[:exponent+1]
+        fract_part = mantissa_value[exponent+1:]
 
-        # #print(mantissa_int, mantissa_frac)
-        # bfloat16_values.append(((-1)**int(sign,2))*(mantissa_int+mantissa_frac))
+        if(len(int_part) != 0):
+            int_value = int(int_part,2)
+        else:
+            int_value = 0
+
+        fract_value = 0
+        for i in range(len(fract_part)):
+            if(fract_part[i] == '1'):
+                fract_value += 1/(2**(i+1))
+
+        bfloat16_values.append(((-1)**sign)*(int_value+fract_value))
 
     return bfloat16_values
 
@@ -55,8 +55,14 @@ def unpack_bfp8_b(bfp8_block):
     bfloat16_values = []
     for i in range(len(exponents)):
         exponent = exponents[i]
-        bfp8_mantissas = mantissas[i * 16:(i + 1) * 16]
-        block_bfloat16_values = bfp8_to_float_block(exponent, bfp8_mantissas)
+        bfp8_mantissas = mantissas[i * 16:(i + 1) * 16]        
+        reversed_chunks = []
+        for j in range(0, len(bfp8_mantissas), 4):
+            chunk = bfp8_mantissas[j:j+4]  # Get the next chunk of 4 elements
+            reversed_chunk = chunk[::-1]  # Reverse the chunk
+            reversed_chunks.extend(reversed_chunk)  # Add the reversed chunk to the list
+
+        block_bfloat16_values = bfp8_to_float_block(exponent, reversed_chunks)
         bfloat16_values.extend(block_bfloat16_values)
     
     return torch.tensor(bfloat16_values, dtype=torch.bfloat16)

@@ -4,13 +4,6 @@ import struct
 import torch
 import struct
 
-# ANSI escape codes
-RED = "\033[31m"
-GREEN = "\033[32m"
-YELLOW = "\033[33m"
-BLUE = "\033[34m"
-RESET = "\033[0m"  # Reset to default color
-
 def flatten_list(sublists):
     return [item for sublist in sublists for item in sublist]
 
@@ -53,39 +46,31 @@ def pack_fp16(torch_tensor):
 def float_to_bfp8_block(block):
     exponents = []
     mantissas = []
+    signs = []
     max_exponent = -float('inf')
     
     for value in block:
         binary_str = bfloat16_to_binary(value)
         sign = binary_str[0]
-        #print("number: " , binary_str)
+        signs.append(int(sign,2))
         exponent = int(binary_str[1:9], 2)
-        #print("exponent: ", exponent - 127)
-        mantissa = binary_str[9:]
-        mantissa = sign + "1" + mantissa[:-1]
-        #print("mantissa: ", mantissa)
-        #mantissa = int(mantissa,2)
+        mantissa = binary_str[9:-1] # remove last
+        mantissa = "1" + mantissa ## add 1
         exponents.append(exponent)
         mantissas.append(mantissa)
         max_exponent = max(max_exponent, exponent)
     
     shared_exponent = max_exponent
-    #print("Shared exponent: ", shared_exponent)
-    mantissas_explicit = [mantissa[1:] for mantissa in mantissas]
-    sign_explicit = [mantissa[0] for mantissa in mantissas]
-    #print(f"{RED}{mantissas_explicit[0:10]}{RESET}")
-    #print(f"{YELLOW}{sign_explicit[0:10]}{RESET}")
-    mantissas_explicit = [int(mantissa,2) for mantissa in mantissas_explicit]
-     
+
+    mantissas_explicit = [int(mantissa,2) for mantissa in mantissas]
+
     bfp8_mantissas = []
     for i in range(len(block)):
         exponent_delta = shared_exponent - exponents[i]
-        #print(f"{GREEN}{exponent_delta}{RESET}")
-        shifted_mantissa = mantissas_explicit[i] >> (exponent_delta)
-        bfp8_mantissas.append(int(sign_explicit[i],2) << 7 | shifted_mantissa)
-        print(f"{BLUE}{format(mantissas_explicit[i],'08b')} {exponent_delta} {format(shifted_mantissa,'08b')}{RESET}")
-        print(f"{YELLOW}{format(int(sign_explicit[i],2) << 7 | shifted_mantissa,'08b')}{RESET}")
-    
+        mantissa = mantissas_explicit[i] >> exponent_delta
+        mantissa = (signs[i] << 7) | mantissa
+        bfp8_mantissas.append(mantissa)
+
     return shared_exponent, bfp8_mantissas
 
 def pack_bfp8_b(tensor, block_size=16):
