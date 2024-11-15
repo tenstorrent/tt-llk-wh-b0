@@ -35,34 +35,23 @@ def generate_stimuli(stimuli_format):
         srcA = torch.rand(1024, dtype = format_dict[stimuli_format]) + 0.5
         srcB = torch.rand(1024, dtype = format_dict[stimuli_format]) + 0.5
     elif(stimuli_format == "Bfp8_b"):
-        # srcA = torch.rand(1024, dtype = torch.bfloat16) + 0.5
-        # srcB = torch.rand(1024, dtype = torch.bfloat16) + 0.5
-        srcA = torch.full((1024,), 5, dtype=torch.bfloat16)
-        srcB = torch.full((1024,), 5, dtype=torch.bfloat16)
+        size = 1024
+        integer_part = torch.randint(0, 1, (size,))  
+        fraction = torch.randint(0, 16, (size,)) / 16.0
+        srcA = integer_part.float() + fraction 
+        integer_part = torch.randint(0, 1, (size,))  
+        fraction = torch.randint(0, 16, (size,)) / 16.0
+        srcB = integer_part.float() + fraction  
 
     return srcA, srcB
 
 def generate_golden(operation, operand1, operand2, data_format):
-    if(data_format != "Bfp8_b"):
+    if( data_format == "Float16" or data_format == "Float16_b"):
         tensor1_float = operand1.clone().detach().to(format_dict[data_format])
         tensor2_float = operand2.clone().detach().to(format_dict[data_format])
-    else: 
-        # to precisely mimic how tesix sees bfp8 some preprocesssing needs to be done
-        
-        operand1_packed = pack_bfp8_b(operand1)
-        operand2_packed = pack_bfp8_b(operand2)
-
-        operand1_unpacked = unpack_bfp8_b(operand1_packed)
-        operand2_unpacked = unpack_bfp8_b(operand2_packed)
-
-        print("*"*50)
-        print(operand1_unpacked)
-        print("*"*50)
-        print(operand1_unpacked)
-        print("*"*50)
-
-        tensor1_float = operand1_unpacked.clone().detach().to(torch.float32)
-        tensor2_float = operand2_unpacked.clone().detach().to(torch.float32)
+    else:
+        tensor1_float = operand1.clone().detach().to(format_dict["Float16_b"])
+        tensor2_float = operand2.clone().detach().to(format_dict["Float16_b"])
     
     operations = {
         "elwadd": tensor1_float + tensor2_float,
@@ -88,7 +77,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
 
 @pytest.mark.parametrize("format", ["Bfp8_b", "Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_binary_test"])
-@pytest.mark.parametrize("mathop", ["elwadd"]) #, "elwsub", "elwmul"])
+@pytest.mark.parametrize("mathop", ["elwadd", "elwsub", "elwmul"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, mathop, testname, machine):
     context = init_debuda()
@@ -133,7 +122,7 @@ def test_all(format, mathop, testname, machine):
         atol = 0.05
         rtol = 0.1
     elif(format == "Bfp8_b"):
-        atol = 0.5
+        atol = 0.4
         rtol = 0.3
 
     print(golden[0:10])
