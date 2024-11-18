@@ -133,5 +133,4 @@ def test_multiple_kernels(format, testname, machine,length):
             print("Checking all elements of golden at index: ", index)
 
         for i in range(len(curr_golden)):
-            if curr_golden[i] != 0:
-                assert np.isclose(curr_golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)
+            assert np.isclose(curr_golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)

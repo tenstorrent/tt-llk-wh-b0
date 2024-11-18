@@ -5,11 +5,11 @@
     #include <cstdarg>
     #define PROCESS_NUMBERS(n, ...) processNumbers(n, __VA_ARGS__)
     
-    void elwadd_kernel();
-    void elwsub_kernel();
-    void elwmul_kernel();
-    inline void nop(){};
-    extern void(*kernels[10])(void);
+    void elwadd_kernel(int);
+    void elwsub_kernel(int);
+    void elwmul_kernel(int);
+    inline void nop(int){};
+    extern void(*kernels[10])(int);
 
     /* Function for assigning elemtens of kernerls array to some of kernels */
     inline void processNumbers(int n, int first, ...) {

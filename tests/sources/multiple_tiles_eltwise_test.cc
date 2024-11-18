@@ -18,20 +18,12 @@ volatile uint32_t tt_l1_ptr l1_buffer[16] __attribute__ ((section (".text#"))) _
 #include "../helpers/operations/pack_kernels.h"
 #endif
 
-#if defined(LLK_TRISC_PACK)  || defined(LLK_TRISC_UNPACK)
 void(*kernels[10])(int);
-#else
-void(*kernels[10])(void);
-#endif
 
 void run_kernel(){
     for(int i = 0; i < KERN_CNT; i++) {
         if (kernels[i]) {
-            #if defined(LLK_TRISC_PACK) || defined(LLK_TRISC_UNPACK)
-                kernels[i](i);
-            #else
-                kernels[i]();
-            #endif     
+            kernels[i](i);
         } else{
             // WRITE SOMETHING DIFFERENT FROM 1 TO MAILBOX
         }
