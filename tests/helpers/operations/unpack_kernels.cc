@@ -20,10 +20,16 @@
         _llk_unpack_A_<BroadcastType::NONE, false, EltwiseBinaryReuseDestType::NONE, true>((((uint32_t)&buffer_A)/16)-1, 0, DATA_FORMAT, DATA_FORMAT);
     }
 
-    #ifdef UNPACK_A_ADDRS
-    void unpack_AB_kernel(int index){
+    inline void unpack_init(){
         _llk_unpack_AB_hw_configure_(DATA_FORMAT, DATA_FORMAT, DATA_FORMAT, DATA_FORMAT);
         _llk_unpack_AB_init_<>();
+    }
+
+    #ifdef UNPACK_A_ADDRS
+    void unpack_AB_kernel(int index){
+        if(index == 0){
+            unpack_init();
+        }
         _llk_unpack_AB_<>((std::uint32_t)(buffer_A + index*TILE_SIZE_ELEMENTS)/16-1,(std::uint32_t)(buffer_B + index*TILE_SIZE_ELEMENTS)/16-1);
     }
     #else
