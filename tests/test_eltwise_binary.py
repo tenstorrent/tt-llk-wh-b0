@@ -91,8 +91,6 @@ def test_all(format, mathop, testname, machine):
     for i in range(3):
         run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
 
-    read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
-
     if(format == "Float16" or format == "Float16_b"):
         read_words_cnt = len(src_A)//2
     elif( format == "Bfp8_b"):
@@ -124,9 +122,6 @@ def test_all(format, mathop, testname, machine):
     elif(format == "Bfp8_b"):
         atol = 0.4
         rtol = 0.3
-
-    print(golden[0:10])
-    print(res_from_L1[0:10])
 
     golden_tensor = torch.tensor(golden, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
     res_tensor = torch.tensor(res_from_L1, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
