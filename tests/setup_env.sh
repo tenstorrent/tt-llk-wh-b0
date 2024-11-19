@@ -3,7 +3,7 @@
 # **************** DOWNLOAD & INSTALL SFPI ****************************
 git submodule update --init --recursive
 # **************** DOWNLOAD & INSTALL DEBUDA ****************************
-pip install git+https://github.com/tenstorrent/tt-debuda.git
+pip install git+https://github.com/tenstorrent/tt-debuda.git@195c4e4c2ac8d92c7f96ddd31f0621f871919c28
 # **************** SETUP PYTHON VENV **********************************
 
 sudo apt install -y python3.10-venv || { echo "Failed to install python3.10-venv."; exit 1; }

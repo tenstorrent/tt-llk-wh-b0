@@ -51,7 +51,7 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
     elif stimuli_format == "Float32":
         write_to_device("18-18", 0x1b000, pack_fp32(buffer_A))
 
-@pytest.mark.parametrize("format", ["Float32"]) #"Int32","Bfp8_b","Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Float32", "Int32", "Bfp8_b","Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, testname, machine):
