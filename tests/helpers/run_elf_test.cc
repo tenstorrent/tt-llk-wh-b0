@@ -19,15 +19,9 @@ namespace ckernel{
 	volatile uint tt_reg_ptr *regfile = reinterpret_cast<volatile uint *>(REGFILE_BASE);
 	volatile uint tt_l1_ptr * trisc_l1_mailbox = reinterpret_cast<volatile uint tt_l1_ptr *>(0x1d000);
 	uint32_t math_sync_tile_dst_index = 0;
-<<<<<<< HEAD
-	//volatile uint tt_reg_ptr *mailbox_base[4] = {(volatile uint*)0x19FF4};
 	volatile uint tt_reg_ptr *mailbox_base[4] = {
-    reinterpret_cast<volatile uint tt_reg_ptr *>(0x19FFC), reinterpret_cast<volatile uint tt_reg_ptr *>(0x19FF8),
-    reinterpret_cast<volatile uint tt_reg_ptr *>(0x19FF4), reinterpret_cast<volatile uint tt_reg_ptr *>(0x19FF4)
-	};
-=======
-	volatile uint tt_reg_ptr *mailbox_base[4];
->>>>>>> 915de51 (Working on testing int32 and float32 datacopy)
+    reinterpret_cast<volatile uint tt_reg_ptr *>(TENSIX_MAILBOX0_BASE), reinterpret_cast<volatile uint tt_reg_ptr *>(TENSIX_MAILBOX1_BASE),
+    reinterpret_cast<volatile uint tt_reg_ptr *>(TENSIX_MAILBOX2_BASE), reinterpret_cast<volatile uint tt_reg_ptr *>(TENSIX_MAILBOX3_BASE)};
 
 	volatile uint32_t inst_trace_ptr  __attribute__((section(".init"))) = 0;
 	volatile uint32_t inst_trace[1024]  __attribute__((section(".init"))) = {0};
