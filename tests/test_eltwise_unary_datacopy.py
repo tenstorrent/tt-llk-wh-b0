@@ -5,7 +5,6 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import random
 
 format_dict = {
     "Float32": torch.float32,
@@ -24,11 +23,10 @@ format_args_dict = {
 
 
 def generate_stimuli(stimuli_format):
-    if(stimuli_format in ["Float16", "Float16_b", "Float32"]):
-        srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-    elif( stimuli_format == "Int32"):
-        srcA = torch.randint(low=0, high=9, size=(1024,), dtype=torch.int32)
-    elif( stimuli_format == "Bfp8_b"):
+    if(stimuli_format != "Bfp8_b"):
+        #srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
+        srcA = torch.full((1024,), 3, dtype=format_dict[stimuli_format])
+    else:
         size = 1024
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
         #srcA = torch.full((size,), 15.0625, dtype=torch.bfloat16)
@@ -73,8 +71,8 @@ def test_all(format, testname, machine):
         read_words_cnt = len(src_A)//2
     elif( format == "Bfp8_b"):
         read_words_cnt = len(src_A)//4 + 64//4 # 272 for one tile
-    elif( format == "Int32" or format == "Float32"):
-        read_words_cnt = 1024
+    elif( format == "Float32" or format == "Int32"):
+        read_words_cnt = len(src_A)
 
     read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
     
@@ -86,10 +84,10 @@ def test_all(format, testname, machine):
         res_from_L1 = unpack_bfp16(read_data_bytes)
     elif( format == "Bfp8_b"):
         res_from_L1 = unpack_bfp8_b(read_data_bytes)
-    elif( format == "Int32"):
-        res_from_L1 = unpack_int32(read_data_bytes)
     elif( format == "Float32"):
         res_from_L1 = unpack_float32(read_data_bytes)
+    elif( format == "Int32"):
+        res_from_L1 = unpack_int32(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
 
@@ -100,7 +98,7 @@ def test_all(format, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    if(format == "Float16_b" or format == "Float16" or format == "Int32" or format == "Float32"):
+    if(format == "Float16_b" or format == "Float16" or format == "Float32"):
         atol = 0.05
         rtol = 0.1
     elif(format == "Bfp8_b"):

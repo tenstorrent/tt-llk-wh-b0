@@ -34,11 +34,11 @@ def unpack_fp16(packed_list):
 def unpack_bfp16(packed_list):
     return [bytes_to_bfloat16(packed_list[i:i + 2]).item() for i in range(0, len(packed_list), 2)]
 
-def unpack_int32(packed_list):
-    return [bytes_to_int32(packed_list[i:i + 4]).item() for i in range(0, len(packed_list), 4)]
-
 def unpack_float32(packed_list):
     return [bytes_to_float32(packed_list[i:i + 4]).item() for i in range(0, len(packed_list), 4)]
+
+def unpack_int32(packed_list):
+    return [bytes_to_int32(packed_list[i:i + 4]).item() for i in range(0, len(packed_list), 4)]
 
 def bfp8_to_float_block(exponent, bfp8_mantissas):
     bfloat16_values = []
