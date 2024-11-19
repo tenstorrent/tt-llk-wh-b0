@@ -22,16 +22,13 @@ format_args_dict = {
     "Int32": "FORMAT_INT32"
 }
 
-mathop_args_dict = {
-    "sqrt": "SFPU_OP_SQRT",
-    "square": "SFPU_OP_SQUARE",
-    "log": "SFPU_OP_LOG"
-}
 
 def generate_stimuli(stimuli_format):
-    if(stimuli_format != "Bfp8_b"):
+    if(stimuli_format in ["Float16", "Float16_b", "Float32"]):
         srcA = torch.rand(1024, dtype=format_dict[stimuli_format]) + 0.5
-    else:
+    elif( stimuli_format == "Int32"):
+        srcA = torch.randint(low=0, high=9, size=(1024,), dtype=torch.int32)
+    elif( stimuli_format == "Bfp8_b"):
         size = 1024
         #srcA = torch.rand(1024, dtype=torch.bfloat16) + 0.5
         #srcA = torch.full((size,), 15.0625, dtype=torch.bfloat16)
@@ -51,8 +48,12 @@ def write_stimuli_to_l1(buffer_A, stimuli_format):
         write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
     elif stimuli_format == "Bfp8_b":
         write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
+    elif stimuli_format == "Int32":
+        write_to_device("18-18", 0x1b000, pack_int32(buffer_A))
+    elif stimuli_format == "Float32":
+        write_to_device("18-18", 0x1b000, pack_fp32(buffer_A))
 
-@pytest.mark.parametrize("format", ["Bfp8_b","Float16_b", "Float16"])
+@pytest.mark.parametrize("format", ["Float32"]) #"Int32","Bfp8_b","Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
 @pytest.mark.parametrize("machine", ["wormhole"])
 def test_all(format, testname, machine):
@@ -72,6 +73,8 @@ def test_all(format, testname, machine):
         read_words_cnt = len(src_A)//2
     elif( format == "Bfp8_b"):
         read_words_cnt = len(src_A)//4 + 64//4 # 272 for one tile
+    elif( format == "Int32" or format == "Float32"):
+        read_words_cnt = 1024
 
     read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
     
@@ -83,6 +86,10 @@ def test_all(format, testname, machine):
         res_from_L1 = unpack_bfp16(read_data_bytes)
     elif( format == "Bfp8_b"):
         res_from_L1 = unpack_bfp8_b(read_data_bytes)
+    elif( format == "Int32"):
+        res_from_L1 = unpack_int32(read_data_bytes)
+    elif( format == "Float32"):
+        res_from_L1 = unpack_float32(read_data_bytes)
 
     assert len(res_from_L1) == len(golden)
 
@@ -93,7 +100,7 @@ def test_all(format, testname, machine):
     assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
     assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
-    if(format == "Float16_b" or format == "Float16"):
+    if(format == "Float16_b" or format == "Float16" or format == "Int32" or format == "Float32"):
         atol = 0.05
         rtol = 0.1
     elif(format == "Bfp8_b"):
@@ -103,8 +110,8 @@ def test_all(format, testname, machine):
     print(golden[0:10])
     print(res_from_L1[0:10])
 
-    golden_tensor = torch.tensor(golden, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
-    res_tensor = torch.tensor(res_from_L1, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
+    golden_tensor = torch.tensor(golden, dtype=format_dict[format] if format in ["Float16", "Float16_b", "Float32", "Int32"] else torch.bfloat16)
+    res_tensor = torch.tensor(res_from_L1, dtype=format_dict[format] if format in ["Float16", "Float16_b", "Float32", "Int32"] else torch.bfloat16)
 
     for i in range(len(golden)):
         assert torch.isclose(golden_tensor[i],res_tensor[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {golden[i]} and {res_from_L1[i]}"

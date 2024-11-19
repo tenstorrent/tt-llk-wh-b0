@@ -4,7 +4,7 @@
 #include "llk_defs.h"
 #include "ckernel.h"
 
-const bool unpack_to_dest = false;
+const bool unpack_to_dest = true;
 
 // Globals
 uint32_t unp_cfg_context = 0;

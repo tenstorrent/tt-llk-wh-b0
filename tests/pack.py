@@ -21,10 +21,17 @@ def bfloat16_to_bytes(number):
     res_masked = number_unpacked & 0xFFFF0000
     return int_to_bytes_list(res_masked)
 
+def fp32_to_bytes(number):
+    number_unpacked = struct.unpack('!I', struct.pack('!f', number))[0]
+    return int_to_bytes_list(number_unpacked)    
+
+def int32_to_bytes(number):
+    number_unpacked = struct.unpack('!I', struct.pack('!I', number))[0]
+    return int_to_bytes_list(number_unpacked) 
+
 def bfloat16_to_binary(value):
     float_value = value.to(torch.float32).item()
     bfloat16_bytes = bfloat16_to_bytes(float_value)
-    #print(f"{format(bfloat16_bytes[0],'08b')}{format(bfloat16_bytes[1],'08b')}")
     return f"{bfloat16_bytes[0]:08b}{bfloat16_bytes[1]:08b}"
 
 def pack_bfp16(torch_tensor):
@@ -42,6 +49,18 @@ def pack_fp16(torch_tensor):
         half2 = float16_to_bytes(torch_tensor[i + 1])
         packed_bytes.extend([half1[0:2][::-1], half2[0:2][::-1]][::-1])  # reverse endian
     return flatten_list(packed_bytes)
+
+def pack_int32(torch_tensor):
+    packed_bytes = []
+    for i in range(len(torch_tensor)):
+        packed_bytes.append(int32_to_bytes(torch_tensor[i])[::-1]) # reverse endian
+    return flatten_list(packed_bytes)
+
+def pack_fp32(torch_tensor):
+    packed_bytes = []
+    for i in range(0, len(torch_tensor)):
+        packed_bytes.append(fp32_to_bytes(torch_tensor[i])[::-1])
+    return flatten_list(packed_bytes) 
 
 def float_to_bfp8_block(block):
     exponents = []
