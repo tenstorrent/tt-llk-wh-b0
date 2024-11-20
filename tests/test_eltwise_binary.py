@@ -5,8 +5,6 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import numpy as np
-import struct
 
 format_dict = {
     "Float32": torch.float32,

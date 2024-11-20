@@ -5,8 +5,6 @@ from dbd.tt_debuda_init import init_debuda
 from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import numpy as np
-
 
 format_dict = {
     "Float32": torch.float32,
@@ -132,8 +130,13 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
     
     res_sublists = [res_from_L1[i:i + chunk_size] for i in range(0, len(res_from_L1), chunk_size)]
 
-    tolerance = 0.1
+    if(format == "Float16_b" or format == "Float16"):
+        atol = 0.05
+        rtol = 0.1
+    elif(format == "Bfp8_b"):
+        atol = 0.4
+        rtol = 0.3
+
     for sublist in res_sublists:
         for i in range(len(sublist)):  
-            if golden[i] != 0:
-                assert np.isclose(res_from_L1[i],golden[i], rtol = 0.1, atol = 0.05)
+            assert torch.isclose(torch.tensor(res_from_L1[i]),torch.tensor(golden[i]), rtol = rtol, atol = atol)

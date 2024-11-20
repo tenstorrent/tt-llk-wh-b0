@@ -6,8 +6,6 @@ from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 import itertools
-import numpy as np
-
 
 format_dict = {
     "Float32": torch.float32,
@@ -132,5 +130,12 @@ def test_multiple_kernels(format, testname, machine,length):
             assert len(res_from_L1) == len(curr_golden)
             print("Checking all elements of golden at index: ", index)
 
+            golden_tensor = torch.tensor(curr_golden, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
+            res_tensor = torch.tensor(res_from_L1, dtype=format_dict[format] if format in ["Float16", "Float16_b"] else torch.bfloat16)
+
+            if(format == "Float16_b" or format == "Float16"):
+                atol = 0.05
+                rtol = 0.1
+
         for i in range(len(curr_golden)):
-            assert np.isclose(curr_golden[i],res_from_L1[i], rtol = 0.1, atol = 0.05)
+            assert torch.isclose(golden_tensor[i],res_tensor[i], rtol = rtol, atol = atol), f"Failed at index {i} with values {curr_golden[i]} and {res_from_L1[i]}"
