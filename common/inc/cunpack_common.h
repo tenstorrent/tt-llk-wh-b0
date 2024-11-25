@@ -187,6 +187,8 @@ namespace ckernel::unpacker
       cfg_reg_rmw_tensix<ALU_FORMAT_SPEC_REG0_SrcA_ADDR32, 0, ALU_ACC_CTRL_INT8_math_enabled_MASK>(alu_payload.val);
    }
 
+   // NOTE_TT: Unpacker input address computations depend on the descriptor dimensions being programmed properly and the output addresses depend on the strides being programmed properly. So both of them are needed.
+
    template<bool row_pool=false, bool is_fp32_dest_acc_en = false, bool fpu_srnd_en = false, bool pack_srnd_en = false>
    inline void configure_unpack_AB(
      const uint unpA_src_format,
@@ -210,6 +212,8 @@ namespace ckernel::unpacker
 
       uint unpA_ch1_x_stride = (uint) (unpA_dst_format&0x3) == (uint) DataFormat::Float32 ? 4 : (uint) (unpA_dst_format&0x3) == (uint) DataFormat::Float16 ? 2 : 1;
       uint unpB_ch1_x_stride = (uint) (unpB_dst_format&0x3) == (uint) DataFormat::Float32 ? 4 : (uint) (unpB_dst_format&0x3) == (uint) DataFormat::Float16 ? 2 : 1;
+
+      // NOTE_TT: We might need to modify this hard coded stride for different sized faces.
       uint unpA_ch1_z_stride = FACE_C_DIM*FACE_R_DIM*unpA_ch1_x_stride;
       uint unpB_ch1_z_stride = FACE_C_DIM*FACE_R_DIM*unpB_ch1_x_stride;
       uint exp_width = ((uint)unpA_dst_format>>2)&0x1; //0=5-bit, 1=8-bit
@@ -354,6 +358,7 @@ namespace ckernel::unpacker
       reset_config_context();
    }
 
+   // NOTE_TT: This function may be needed for tiny tiles. 
    template <std::uint32_t UNP_SEL = p_setadc::UNP_AB>
    inline void config_unpacker_x_end(const uint32_t face_r_dim)
    {
