@@ -28,57 +28,60 @@ enum {
 
 sfpi_inline vFloat _calculate_sfpu_binary_power_(vFloat base, vFloat pow)
 {
-    ////////////////////////////
-    // "normalize base to calculation range"
-    ////////////////////////////
+    // Check for integer power
+    vInt pow_int = float_to_int16(pow, 0); // int16 should be plenty, since large powers will approach 0/Inf
+    vFloat pow_rounded = int32_to_float(pow_int, 0);
+    v_if (pow_rounded == pow) {
+        // if pow is integer, set base to positive
+        base = setsgn(base, 0);
+    }
+    v_endif;
+
+    // Normalize base to calculation range
     vFloat x = setexp(base, 127);    // set exp to exp bias (put base in range of 1-2)
 
-    // XXXXXX ask Namal? if we can derive the coefficients below to higher precision
-    ////////////////////////////
-    // Calculate Cheby Approximation using Horner Form Multiplication: 3rd Order
-    // x* ( x* (A*x + B) + C) + D
-    // A :0.1058, B: -0.3942, C: 0.9813, D: 0.006
-    // Run above on (x-1) so x is in ln(x+1), plug (x-1 into equation above to
-    // save the subtract and get A',B',C',D'):
-    // A' = A
-    // B' = -3A + B
-    // C' = 3a -2B + C
-    // D' = -A + B - C + D
-    // A':0.1058, B':-0.7116, C':2.0871, D':-1.4753
-    ////////////////////////////
-    // XXXXX try variants of the below: B'=.7122, C'=2.0869
-    vFloat series_result = x * (x * (x * 0.1058f - 0.7166f) + 2.0871) + -1.4753f;
+    // 3rd order polynomial approx - determined using rminimax over [1,2]
+    vFloat series_result = x * (x * (x * 0x2.44734p-4f - 0xd.e712ap-4f) + 0x2.4f5388p+0f) - 0x1.952992p+0f;
 
-    ////////////////////////////
     // Convert exponent to float
-    ////////////////////////////
     vInt exp = exexp(base);
     v_if (exp < 0) {
         exp = setsgn(~exp + 1, 1);
     }
     v_endif;
-
     vFloat expf = int32_to_float(exp, 0);
+ 
+    // De-normalize to original range
     vFloat vConstLn2 = 0.692871f;
     vFloat log_result = expf * vConstLn2 + series_result; // exp correction: ln(1+x) + exp*ln(2)
 
-    ////////////////////////////
     // Base case when input is 0. ln(0) = -inf
-    ////////////////////////////
-    v_if (base == 0.0F) { // Reload for register pressure
+    v_if (base == 0.0f) { // Reload for register pressure
         log_result = -std::numeric_limits<float>::infinity();
     }
     v_endif;
 
+    // Take exp(pow * log(base)) to produce base^pow
     vFloat val = pow * log_result;
-    ////////////////////////////
-    // Take exp(pow * log_result) to produce base^pow
-    ////////////////////////////
+
     // Force sign to 0 (make number positive)
     vFloat result = _sfpu_exp_(setsgn(val, 0));
 
     v_if (val < 0) {
         result = _sfpu_reciprocal_(result);
+    }
+    v_endif;
+
+    // Check for integer power
+    v_if ((pow_rounded == pow) && (pow_int & 0x1)) {
+        // if pow is odd integer, set result to negative
+        result = setsgn(result, 1);
+    }
+    v_endif;
+
+    // Check valid base range
+    v_if (base < 0.0f) { // negative base 
+        result = std::numeric_limits<float>::quiet_NaN();
     }
     v_endif;
 
@@ -102,8 +105,7 @@ inline void _calculate_sfpu_binary_(const uint dst_offset)
         } else if constexpr (BINOP_MODE == MUL_BINARY) {
             result = in0 * in1;
         } else if constexpr (BINOP_MODE == DIV_BINARY) {
-            // inversion is carried out on host side and passed down
-            result = in0 * in1;
+            result = in0 * _sfpu_reciprocal_(in1);
         } else if constexpr (BINOP_MODE == RSUB_BINARY) {
             result = in1 - in0;
         } else if constexpr (BINOP_MODE == POW_BINARY) {
