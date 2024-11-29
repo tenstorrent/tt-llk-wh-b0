@@ -28,6 +28,8 @@ enum {
 
 sfpi_inline vFloat _calculate_sfpu_binary_power_(vFloat base, vFloat pow)
 {
+    vFloat original_base = base;
+
     // Check for integer power
     vInt pow_int = float_to_int16(pow, 0); // int16 should be plenty, since large powers will approach 0/Inf
     vFloat pow_rounded = int32_to_float(pow_int, 0);
@@ -72,16 +74,19 @@ sfpi_inline vFloat _calculate_sfpu_binary_power_(vFloat base, vFloat pow)
     }
     v_endif;
 
-    // Check for integer power
-    v_if ((pow_rounded == pow) && (pow_int & 0x1)) {
-        // if pow is odd integer, set result to negative
-        result = setsgn(result, 1);
-    }
-    v_endif;
-
     // Check valid base range
-    v_if (base < 0.0f) { // negative base 
-        result = std::numeric_limits<float>::quiet_NaN();
+    v_if (original_base < 0.0f) { // negative base
+        // Check for integer power
+        v_if (pow_rounded == pow) {
+            // if pow is odd integer, set result to negative
+            v_if (pow_int & 0x1) {
+                result = setsgn(result, 1);
+            }
+            v_endif;
+        } v_else {
+            result = std::numeric_limits<float>::quiet_NaN();
+        }
+        v_endif;
     }
     v_endif;
 
