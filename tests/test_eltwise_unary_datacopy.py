@@ -1,8 +1,8 @@
 import pytest
 import torch
 import os
-from dbd.tt_debuda_init import init_debuda
-from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from ttlens.tt_lens_init import init_ttlens
+from ttlens.tt_lens_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 
@@ -41,31 +41,30 @@ def generate_golden(operand1,format):
 
 def write_stimuli_to_l1(buffer_A, stimuli_format):
     if stimuli_format == "Float16_b":
-        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
+        write_to_device("0,0", 0x1b000, pack_bfp16(buffer_A))
     elif stimuli_format == "Float16":
-        write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
+        write_to_device("0,0", 0x1b000, pack_fp16(buffer_A))
     elif stimuli_format == "Bfp8_b":
-        write_to_device("18-18", 0x1b000, pack_bfp8_b(buffer_A))
+        write_to_device("0,0", 0x1b000, pack_bfp8_b(buffer_A))
     elif stimuli_format == "Int32":
-        write_to_device("18-18", 0x1b000, pack_int32(buffer_A))
+        write_to_device("0,0", 0x1b000, pack_int32(buffer_A))
     elif stimuli_format == "Float32":
-        write_to_device("18-18", 0x1b000, pack_fp32(buffer_A))
+        write_to_device("0,0", 0x1b000, pack_fp32(buffer_A))
 
 @pytest.mark.parametrize("format", ["Bfp8_b","Float16_b", "Float16"]) #,"Float32", "Int32"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
-@pytest.mark.parametrize("machine", ["wormhole"])
-def test_all(format, testname, machine):
-    context = init_debuda()
+def test_all(format, testname):
+    #context = init_debuda()
     src_A = generate_stimuli(format)
     golden = generate_golden(src_A,format)
     write_stimuli_to_l1(src_A, format)
 
-    make_cmd = f"make --silent format={format_args_dict[format]} testname={testname} machine={machine}"
+    make_cmd = f"make --silent format={format_args_dict[format]} testname={testname}"
 
     os.system(make_cmd)
 
     for i in range(3):
-        run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
+        run_elf(f"build/elf/{testname}_trisc{i}.elf", "0,0", risc_id=i + 1)
 
     if(format == "Float16" or format == "Float16_b"):
         read_words_cnt = len(src_A)//2
@@ -74,7 +73,7 @@ def test_all(format, testname, machine):
     elif( format == "Float32" or format == "Int32"):
         read_words_cnt = len(src_A)
 
-    read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
+    read_data = read_words_from_device("0,0", 0x1a000, word_count=read_words_cnt)
     
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
 
@@ -94,9 +93,9 @@ def test_all(format, testname, machine):
     os.system("make clean")
 
     # Mailbox checks
-    assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
     if(format == "Float16_b" or format == "Float16" or format == "Float32"):
         atol = 0.05

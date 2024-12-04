@@ -83,7 +83,7 @@ def test_all(format, mathop, testname):
     golden = generate_golden(mathop, src_A, src_B, format)
     write_stimuli_to_l1(src_A, src_B, format)
 
-    make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]}"
+    make_cmd = f"make --silent format={format_args_dict[format]} mathop={mathop_args_dict[mathop]} testname={testname}"
     os.system(make_cmd)
 
     for i in range(3):

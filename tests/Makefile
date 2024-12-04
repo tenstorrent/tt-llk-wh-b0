@@ -12,7 +12,7 @@ OPTIONS_ALL=-O3 -march=rv32im_xttwh -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ff
 OPTIONS_COMPILE=-fno-use-cxa-atexit -fno-exceptions -Wall -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DARCH_WORMHOLE -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
 OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -Wl,--trace
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
-INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi-rel/include
+INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi/include
 
 FORMAT_ARG:=-D$(format) 
 
@@ -59,10 +59,8 @@ else
 	OPTIONS_PACK= 
 endif
 
-
 OPTIONS_COMPILE+=$(FORMAT_ARG) $(MATHOP_ARG)
 OPTIONS_COMPILE+=$(INCLUDES)
-OPTIONS_ALL+=-m$(machine)
 
 # Define project paths
 RISCV_SOURCE=helpers
@@ -71,7 +69,7 @@ OUTPUT_ELFS = $(BUILD_DIR)/elf
 # Define targets
 .PHONY: all clean
 
-all: $(BUILD_DIR) $(OUTPUT_ELFS) $(OUTPUT_ELFS)/$(testname)_trisc0.elf $(OUTPUT_ELFS)/$(testname)_trisc1.elf $(OUTPUT_ELFS)/$(testname)_trisc2.elf 
+all: $(BUILD_DIR) $(OUTPUT_ELFS) $(OUTPUT_ELFS)/$(testname)_trisc0.elf $(OUTPUT_ELFS)/$(testname)_trisc1.elf $(OUTPUT_ELFS)/$(testname)_trisc2.elf
 dis: $(BUILD_DIR)/$(testname)_trisc0.dis $(BUILD_DIR)/$(testname)_trisc1.dis $(BUILD_DIR)/$(testname)_trisc2.dis
 
 $(BUILD_DIR)/%.dis :  $(OUTPUT_ELFS)/%.elf

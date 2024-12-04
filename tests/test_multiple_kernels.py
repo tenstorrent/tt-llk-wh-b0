@@ -1,8 +1,8 @@
 import pytest
 import torch
 import os
-from dbd.tt_debuda_init import init_debuda
-from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from ttlens.tt_lens_init import init_ttlens
+from ttlens.tt_lens_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 import itertools
@@ -51,11 +51,11 @@ def generate_golden(operations, operand1, operand2, data_format):
 
 def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
     if stimuli_format == "Float16_b":
-        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
-        write_to_device("18-18", 0x1c000, pack_bfp16(buffer_B))    
+        write_to_device("0,0", 0x1b000, pack_bfp16(buffer_A))
+        write_to_device("0,0", 0x1c000, pack_bfp16(buffer_B))    
     elif stimuli_format == "Float16":
-        write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
-        write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
+        write_to_device("0,0", 0x1b000, pack_fp16(buffer_A))
+        write_to_device("0,0", 0x1c000, pack_fp16(buffer_B))
 
 pack_addresses = [0x1a000,0x1d000, 0x1e000] #, 0x1f000, 0x20000, 0x21000, 0x22000, 0x23000, 0x24000, 0x25000]
 
@@ -63,8 +63,7 @@ pack_addresses = [0x1a000,0x1d000, 0x1e000] #, 0x1f000, 0x20000, 0x21000, 0x2200
 @pytest.mark.parametrize("length", range(1,len(pack_addresses)+1))
 @pytest.mark.parametrize("format", ["Float16_b"])
 @pytest.mark.parametrize("testname", ["multiple_ops_test"])
-@pytest.mark.parametrize("machine", ["wormhole"])
-def test_multiple_kernels(format, testname, machine,length):
+def test_multiple_kernels(format, testname,length):
 
     unpack_kernels = [2]*length
     pack_kernels = [1]*length
@@ -98,12 +97,12 @@ def test_multiple_kernels(format, testname, machine,length):
 
         # ******************************** 
 
-        context = init_debuda()
+        #context = init_debuda()
         src_A, src_B = generate_stimuli(format)
         golden = generate_golden(math_kernels, src_A, src_B, format)
         write_stimuli_to_l1(src_A, src_B, format)
 
-        make_cmd = f"make --silent format={format_args_dict[format]} testname={testname} machine={machine}"
+        make_cmd = f"make --silent format={format_args_dict[format]} testname={testname}"
         make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
         make_cmd += " math_kern_cnt="+ str(len(math_kernels))+ " math_kerns="+math_kerns_formatted
         make_cmd += " pack_kern_cnt="+ str(len(pack_kernels))+ " pack_kerns="+pack_kerns_formatted
@@ -111,18 +110,18 @@ def test_multiple_kernels(format, testname, machine,length):
         os.system(make_cmd)
 
         for i in range(3):
-            run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
+            run_elf(f"build/elf/{testname}_trisc{i}.elf", "0,0", risc_id=i + 1)
 
         os.system("make clean")
 
         # Mailbox checks
-        assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-        assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-        assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+        assert read_words_from_device("0,0", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+        assert read_words_from_device("0,0", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+        assert read_words_from_device("0,0", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
         for index in range(len(golden)):
             read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
-            read_data = read_words_from_device("18-18", pack_addresses[index], word_count=read_words_cnt)
+            read_data = read_words_from_device("0,0", pack_addresses[index], word_count=read_words_cnt)
             read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
             res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
             curr_golden = golden[index]

@@ -1,8 +1,8 @@
 import pytest
 import torch
 import os
-from dbd.tt_debuda_init import init_debuda
-from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from ttlens.tt_lens_init import init_ttlens
+from ttlens.tt_lens_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
 
@@ -47,18 +47,17 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format, tile_cnt):
     buffer_B_address = 0x1a000 + 1024*tile_cnt
 
     if stimuli_format == "Float16_b":
-        write_to_device("18-18", 0x1a000, pack_bfp16(buffer_A))
-        write_to_device("18-18", buffer_B_address, pack_bfp16(buffer_B))    
+        write_to_device("0,0", 0x1a000, pack_bfp16(buffer_A))
+        write_to_device("0,0", buffer_B_address, pack_bfp16(buffer_B))    
     elif stimuli_format == "Float16":
-        write_to_device("18-18", 0x1a000, pack_fp16(buffer_A))
-        write_to_device("18-18", buffer_B_address, pack_fp16(buffer_B))
+        write_to_device("0,0", 0x1a000, pack_fp16(buffer_A))
+        write_to_device("0,0", buffer_B_address, pack_fp16(buffer_B))
 
 @pytest.mark.parametrize("mathop", range(1,4))
 @pytest.mark.parametrize("tile_cnt", range(1,4))
 @pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["multiple_tiles_eltwise_test"])
-@pytest.mark.parametrize("machine", ["wormhole"])
-def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
+def test_multiple_kernels(format, testname,tile_cnt,mathop):
 
     # prepare setup for running kernels
 
@@ -93,12 +92,12 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
 
     # ******************************** 
 
-    context = init_debuda()
+    #context = init_debuda()
     src_A, src_B = generate_stimuli(format,tile_cnt)
     golden = generate_golden(mathop,src_A,src_B,format)
     write_stimuli_to_l1(src_A,src_B,format,tile_cnt)
 
-    make_cmd = f"make --silent format={format_args_dict[format]} testname={testname} machine={machine}"
+    make_cmd = f"make --silent format={format_args_dict[format]} testname={testname}"
     make_cmd += " unpack_kern_cnt="+ str(len(unpack_kernels))+ " unpack_kerns="+unpack_kerns_formatted
     make_cmd += " math_kern_cnt="+ str(len(math_kernels))+ " math_kerns="+math_kerns_formatted
     make_cmd += " pack_kern_cnt="+ str(len(pack_kernels))+ " pack_kerns="+pack_kerns_formatted
@@ -108,18 +107,18 @@ def test_multiple_kernels(format, testname, machine,tile_cnt,mathop):
     os.system(make_cmd)
 
     for i in range(3):
-        run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
+        run_elf(f"build/elf/{testname}_trisc{i}.elf", "0,0", risc_id=i + 1)
 
     os.system("make clean")
 
-    assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
     #check resluts from multiple tiles
 
     read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
-    read_data = read_words_from_device("18-18", pack_start_address, word_count=read_words_cnt*tile_cnt)
+    read_data = read_words_from_device("0,0", pack_start_address, word_count=read_words_cnt*tile_cnt)
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
     res_from_L1 = unpack_bfp16(read_data_bytes) if format == "Float16_b" else unpack_fp16(read_data_bytes)
 

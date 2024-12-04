@@ -1,11 +1,10 @@
 import pytest
 import torch
 import os
-from dbd.tt_debuda_init import init_debuda
-from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from ttlens.tt_lens_init import init_ttlens
+from ttlens.tt_lens_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
-import numpy as np
 
 format_dict = {
     "Float32": torch.float32,
@@ -51,30 +50,29 @@ def generate_golden(operand1, operand2, data_format):
 
 def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
     if stimuli_format == "Float16_b":
-        write_to_device("18-18", 0x1b000, pack_bfp16(buffer_A))
-        write_to_device("18-18", 0x1c000, pack_bfp16(buffer_B))    
+        write_to_device("0,0", 0x1b000, pack_bfp16(buffer_A))
+        write_to_device("0,0", 0x1c000, pack_bfp16(buffer_B))    
     elif stimuli_format == "Float16":
-        write_to_device("18-18", 0x1b000, pack_fp16(buffer_A))
-        write_to_device("18-18", 0x1c000, pack_fp16(buffer_B))
+        write_to_device("0,0", 0x1b000, pack_fp16(buffer_A))
+        write_to_device("0,0", 0x1c000, pack_fp16(buffer_B))
 
 @pytest.mark.parametrize("format", ["Float16_b"])#, "Float16"])
 @pytest.mark.parametrize("testname", ["matmul_test"])
-@pytest.mark.parametrize("machine", ["wormhole"])
-def test_all(format, testname, machine):
+def test_all(format, testname):
 
-    context = init_debuda()
+    #context = init_debuda()
     src_A, src_B = generate_stimuli(format)
     golden = generate_golden(src_A, src_B, format)
     write_stimuli_to_l1(src_A, src_B, format)
 
-    make_cmd = f"make format={format_args_dict[format]} testname={testname} machine={machine}"
+    make_cmd = f"make format={format_args_dict[format]} testname={testname}"
     os.system(make_cmd)
 
     for i in range(3):
-        run_elf(f"build/elf/{testname}_trisc{i}.elf", "18-18", risc_id=i + 1)
+        run_elf(f"build/elf/{testname}_trisc{i}.elf", "0,0", risc_id=i + 1)
 
     read_words_cnt = len(src_A) // (2 if format in ["Float16", "Float16_b"] else 1)
-    read_data = read_words_from_device("18-18", 0x1a000, word_count=read_words_cnt)
+    read_data = read_words_from_device("0,0", 0x1a000, word_count=read_words_cnt)
     
     read_data_bytes = flatten_list([int_to_bytes_list(data) for data in read_data])
     
@@ -85,10 +83,10 @@ def test_all(format, testname, machine):
     os.system("make clean")
 
     # Mailbox checks
-    assert read_words_from_device("18-18", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
-    assert read_words_from_device("18-18", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF4, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FF8, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
+    assert read_words_from_device("0,0", 0x19FFC, word_count=1)[0].to_bytes(4, 'big') == b'\x00\x00\x00\x01'
 
     for i in range(len(golden)):
         if golden[i] != 0:
-            assert np.isclose(golden[i],res_from_L1[i], rtol = 0.2, atol = 0.2), f"index: {i}, golden: {golden[i]}, from L1: {res_from_L1[i]}"
+            assert torch.isclose(torch.tensor(golden[i]),torch.tensor(res_from_L1[i]), rtol = 0.2, atol = 0.2), f"index: {i}, golden: {golden[i]}, from L1: {res_from_L1[i]}"
