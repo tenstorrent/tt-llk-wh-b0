@@ -1,12 +1,25 @@
 #!/bin/bash
 
+sudo apt update
+sudo apt install gawk
+
 # **************** DOWNLOAD & INSTALL SFPI ****************************
-git submodule update --init --recursive
+#git submodule add https://github.com/tenstorrent/sfpi sfpi
+#git submodule sync
+#git submodule update --init --recursive
+wget https://github.com/tenstorrent/sfpi/releases/download/v6.0.0/sfpi-release.tgz
+tar -xzvf sfpi-release.tgz 
+rm -rf sfpi-release.tgz 
 # **************** DOWNLOAD & INSTALL DEBUDA ****************************
-pip install git+https://github.com/tenstorrent/tt-debuda.git@195c4e4c2ac8d92c7f96ddd31f0621f871919c28
+pip install git+https://github.com/tenstorrent/tt-debuda.git@d4ce04c3d4e68cccdf0f53b0b5748680a8a573ed
 # **************** SETUP PYTHON VENV **********************************
 
-sudo apt install -y python3.10-venv || { echo "Failed to install python3.10-venv."; exit 1; }
+# Try to install python3.10-venv first, fallback to python3.8-venv if it fails
+sudo apt install -y python3.10-venv || {
+    echo "Failed to install python3.10-venv, trying python3.8-venv...";
+    sudo apt install -y python3.8-venv || { echo "Failed to install python3.8-venv."; exit 1; }
+}
+
 set -eo pipefail
 
 if [ -z "$PYTHON_ENV_DIR" ]; then
@@ -27,5 +40,3 @@ pip install -U pytest
 pip install pytest-cov
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu || { echo "Failed to install PyTorch packages."; exit 1; }
 
-# reset the board
-/home/software/syseng/wh/tt-smi -wr 0 
