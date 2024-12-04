@@ -8,11 +8,20 @@ OBJCOPY=$(TOOL_PATH)/riscv32-unknown-elf-objcopy
 READELF=$(TOOL_PATH)/riscv32-unknown-elf-readelf
 
 # GCC options
-OPTIONS_ALL=-O3 -march=rv32im_xttwh -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
+OPTIONS_ALL=-O3 -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
+
+ifeq ($(CHIP_ARCH),wormhole)
+	OPTIONS_ALL += -march=rv32im_xttwh
+else ifeq ($(CHIP_ARCH),blackhole)
+	OPTIONS_ALL += -march=rv32im_xttbh 
+else
+    $(info CHIP_ARCH is neither wormhole nor blackhole.)
+endif
+
 OPTIONS_COMPILE=-fno-use-cxa-atexit -fno-exceptions -Wall -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DARCH_WORMHOLE -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
 OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -Wl,--trace
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
-INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi/include
+INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/$(CHIP_ARCH) -I../firmware/riscv/$(CHIP_ARCH)/wormhole_b0_defines -I../firmware/riscv/$(CHIP_ARCH)/noc -Isfpi/include
 
 FORMAT_ARG:=-D$(format) 
 
@@ -84,11 +93,11 @@ $(OUTPUT_ELFS): $(BUILD_DIR)
 
 # Buiding .elf files for every TRISC core
  $(OUTPUT_ELFS)/$(testname)_trisc0.elf :$(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_unpack.o $(BUILD_DIR)/$(testname)_unpack.o $(LINK_OBJECTS)
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc0.ld -T$(RISCV_SOURCE)/sections.ld -o $@
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.$(CHIP_ARCH).ld -T$(RISCV_SOURCE)/trisc0.ld -T$(RISCV_SOURCE)/sections.ld -o $@
  $(OUTPUT_ELFS)/$(testname)_trisc1.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_math.o $(BUILD_DIR)/$(testname)_math.o $(LINK_OBJECTS)
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc1.ld -T$(RISCV_SOURCE)/sections.ld -o $@
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.$(CHIP_ARCH).ld -T$(RISCV_SOURCE)/trisc1.ld -T$(RISCV_SOURCE)/sections.ld -o $@
  $(OUTPUT_ELFS)/$(testname)_trisc2.elf: $(BUILD_DIR)/tmu-crt0.o $(BUILD_DIR)/main_pack.o $(BUILD_DIR)/$(testname)_pack.o $(LINK_OBJECTS)
-	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.wormhole.ld -T$(RISCV_SOURCE)/trisc2.ld -T$(RISCV_SOURCE)/sections.ld -o $@
+	$(GXX) $(OPTIONS_ALL) $(OPTIONS_LINK) $^ -T$(RISCV_SOURCE)/memory.$(CHIP_ARCH).ld -T$(RISCV_SOURCE)/trisc2.ld -T$(RISCV_SOURCE)/sections.ld -o $@
 
 #compiling _test.cc to .o
 $(BUILD_DIR)/$(testname)_unpack.o: sources/$(testname).cc
