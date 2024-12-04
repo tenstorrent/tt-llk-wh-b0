@@ -20,6 +20,7 @@ source .venv/bin/activate
 pip3 install .
 pip3 install --upgrade pip
 # Find on which architecture code will be tested
+tt-smi -ls > arch.dump
 arch_options=("Wormhole" "Blackhole" "Grayskull")
 file="arch.dump"
 result=$(python3 helpers/find_arch.py "${arch_options[@]}" "$file")
