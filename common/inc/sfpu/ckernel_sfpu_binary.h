@@ -111,10 +111,17 @@ inline void _calculate_sfpu_binary_(const uint dst_offset)
             result = in0 * in1;
         } else if constexpr (BINOP_MODE == DIV_BINARY) {
             v_if (in1 == 0) {
-                result = std::numeric_limits<float>::infinity();
-                result = setsgn(result, in0);
+                v_if (in0 == 0) {
+                    result = std::numeric_limits<float>::quiet_NaN();
+                } v_else {
+                    result = std::numeric_limits<float>::infinity();
+                    result = setsgn(result, in0);
+                }
+                v_endif;
+            } v_elseif (in0 == in1) {
+                result = vConst1;
             } v_else {
-                result = in0 * setsgn(_sfpu_reciprocal_(in1), in1);
+                result = in0 * setsgn(_sfpu_reciprocal_<4>(in1), in1);
             }
             v_endif;
         } else if constexpr (BINOP_MODE == RSUB_BINARY) {
