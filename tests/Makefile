@@ -1,4 +1,4 @@
-TOOL_PATH?=sfpi-rel/compiler/bin
+TOOL_PATH?=sfpi/compiler/bin
 BUILD_DIR ?=build
 
 # Tool paths
@@ -8,9 +8,9 @@ OBJCOPY=$(TOOL_PATH)/riscv32-unknown-elf-objcopy
 READELF=$(TOOL_PATH)/riscv32-unknown-elf-readelf
 
 # GCC options
-OPTIONS_ALL=-O3 -march=rv32imw -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
+OPTIONS_ALL=-O3 -march=rv32im_xttwh -mtune=rvtt-b1 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
 OPTIONS_COMPILE=-fno-use-cxa-atexit -fno-exceptions -Wall -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DARCH_WORMHOLE -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
-OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -L../dbd/riscv-src -Wl,--trace
+OPTIONS_LINK=-fno-exceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -Wl,--trace
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
 INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/wormhole -I../firmware/riscv/wormhole/wormhole_b0_defines -I../firmware/riscv/wormhole/noc -Isfpi-rel/include
 
