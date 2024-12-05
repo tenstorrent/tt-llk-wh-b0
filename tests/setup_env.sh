@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Check if a Python virtual environment is activated
+# This can cause crash of script so first deactivate any existing environments
+if [[ -n "$VIRTUAL_ENV" ]]; then
+    echo "Deactivating current Python environment: $VIRTUAL_ENV"
+    deactivate
+fi
+
 # Update packages and install gawk (if necessary)
 echo "Updating system packages..."
 sudo apt update
