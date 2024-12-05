@@ -5,21 +5,6 @@ echo "Updating system packages..."
 sudo apt update
 sudo apt install -y gawk
 
-# **************** DOWNLOAD & INSTALL TT-LENS ****************************
-wget https://github.com/tenstorrent/tt-lens/releases/download/latest/ttlens-0.1.241202+dev.d4ce04c-cp38-cp38-linux_x86_64.whl
-pip install ttlens-0.1.241202+dev.d4ce04c-cp38-cp38-linux_x86_64.whl
-
-# **************** DOWNLOAD & INSTALL SFPI ****************************
-echo "Downloading SFPI release..."
-wget https://github.com/tenstorrent/sfpi/releases/download/v6.0.0/sfpi-release.tgz -O sfpi-release.tgz
-if [ ! -f "sfpi-release.tgz" ]; then
-    echo "SFPI release not found!"
-    exit 1
-fi
-echo "Extracting SFPI release..."
-tar -xzvf sfpi-release.tgz
-rm -f sfpi-release.tgz
-
 # **************** DOWNLOAD & INSTALL TT-SMI ****************************
 echo "Cloning tt-smi repository..."
 git clone https://github.com/tenstorrent/tt-smi
@@ -60,6 +45,19 @@ echo "CHIP_ARCH is: $CHIP_ARCH"
 # Install torch and related packages
 echo "Installing PyTorch and related packages..."
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+# **************** DOWNLOAD & INSTALL TT-LENS ****************************
+pip install git+https://github.com/tenstorrent/tt-lens.git
+# **************** DOWNLOAD & INSTALL SFPI ****************************
+echo "Downloading SFPI release..."
+wget https://github.com/tenstorrent/sfpi/releases/download/v6.0.0/sfpi-release.tgz -O sfpi-release.tgz
+if [ ! -f "sfpi-release.tgz" ]; then
+    echo "SFPI release not found!"
+    exit 1
+fi
+echo "Extracting SFPI release..."
+tar -xzvf sfpi-release.tgz
+rm -f sfpi-release.tgz
 
 # **************** SETUP PYTHON VENV **********************************
 # Ensure python3.10-venv is installed, fallback to python3.8-venv
