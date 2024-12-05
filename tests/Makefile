@@ -9,7 +9,7 @@ READELF=$(TOOL_PATH)/riscv32-unknown-elf-readelf
 
 # GCC options
 OPTIONS_ALL=-O3 -mabi=ilp32 -std=c++17 -g -ffast-math -flto
-OPTIONS_COMPILE=-fno-use-cxa-atexit -fexceptions -Wall -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
+OPTIONS_COMPILE=-fno-use-cxa-atexit -Wall -fno-exceptions -fno-rtti -Werror -Wno-unknown-pragmas -Wno-error=multistatement-macros -Wno-error=parentheses -Wno-error=unused-but-set-variable -Wno-unused-variable -DTENSIX_FIRMWARE -DDEBUG_PRINT_ENABLED
 
 ifeq ($(CHIP_ARCH),wormhole)
 	OPTIONS_ALL+=-mcpu=tt-wh
