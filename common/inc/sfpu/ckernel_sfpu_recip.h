@@ -67,6 +67,8 @@ inline void _calculate_reciprocal_(const int iterations)
         v_if (in < 0.0F) {
             // Invert sign on calculated value if CC=1 (number is negative)
             out = -out;
+        } v_elseif (in == 0.0F) {
+            out = std::numeric_limits<float>::infinity();
         }
         v_endif;
 
