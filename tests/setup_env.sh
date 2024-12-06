@@ -11,6 +11,9 @@ fi
 echo "Updating system packages..."
 sudo apt update
 sudo apt install -y gawk
+sudo apt install software-properties-common build-essential libyaml-cpp-dev libboost-all-dev libhwloc-dev libzmq3-dev libgtest-dev libgmock-dev xxd
+
+pip install --upgrade pip
 
 # **************** DOWNLOAD & INSTALL TT-SMI ****************************
 echo "Cloning tt-smi repository..."
@@ -54,7 +57,7 @@ echo "Installing PyTorch and related packages..."
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 # **************** DOWNLOAD & INSTALL TT-LENS ****************************
-pip install git+https://github.com/tenstorrent/tt-lens.git
+pip install git+https://github.com/tenstorrent/tt-lens.git@d4ce04c3d4e68cccdf0f53b0b5748680a8a573ed
 # **************** DOWNLOAD & INSTALL SFPI ****************************
 echo "Downloading SFPI release..."
 wget https://github.com/tenstorrent/sfpi/releases/download/v6.0.0/sfpi-release.tgz -O sfpi-release.tgz
@@ -79,7 +82,6 @@ fi
 # Set up Python virtual environment if not already set
 echo "Ensuring virtual environment is set up..."
 python3 -m ensurepip
-pip install --upgrade pip
 
 # Install needed packages
 pip install -U pytest pytest-cov
