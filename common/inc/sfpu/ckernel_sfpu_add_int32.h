@@ -24,15 +24,15 @@ inline void _add_int32_(const uint dst_offset) {
     // Output is int32
     #pragma GCC unroll 8
     for (int d = 0; d < ITERATIONS; d++) {
-        // operand A - int32
-        TTI_SFPLOAD(0, 12, 3, 0);
-        // operand B - int32
-        TT_SFPLOAD(1, 12, 3, dst_offset * 64);
+        // operand A - int32 (keep in 2's complement format)
+        TTI_SFPLOAD(0, 4, 3, 0);
+        // operand B - int32 (keep in 2's complement format)
+        TT_SFPLOAD(1, 4, 3, dst_offset * 64);
         TTI_SFPIADD(0, 1, 0, 4);
         // MAD has a 2-cycle pipeline latency so we need one cycle latency until next instr can consume the result
         TTI_NOP;
-        // LREG_0 -> dest as int32
-        TTI_SFPSTORE(0, 12, 3, 0);
+        // LREG_0 -> dest as int32 (keep in 2's complement format)
+        TTI_SFPSTORE(0, 4, 3, 0);
         dst_reg++;
     }
 }
