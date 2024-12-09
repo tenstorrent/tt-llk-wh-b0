@@ -9,10 +9,18 @@
 
 #include "cmath_common.h"
 #include "llk_math_common.h"
+#include "debug/dprint.h"
 
 #ifndef HF
 #define HF 0
 #endif
+
+#define DIDT_DEBUG 1
+static bool MOP_REUSE_A; 
+static uint32_t MOP_T_DIM; 
+static bool MOP_HIGH_FIDELITY;
+static uint32_t MOP_NUM_FIDELITY_PHASES;
+
 
 using namespace ckernel;
 
@@ -255,6 +263,10 @@ inline void matmul_configure_mop(bool transpose, const std::uint32_t ct_dim, con
 
     const bool reuse_a = ct_dim>=rt_dim;
     const std::uint32_t t_dim = reuse_a ? rt_dim : ct_dim;
+    MOP_REUSE_A = reuse_a;
+    MOP_T_DIM = t_dim;
+    MOP_HIGH_FIDELITY = high_fidelity;
+    MOP_NUM_FIDELITY_PHASES = NUM_FIDELITY_PHASES;
 
     const bool is_in0_16x32 = (in0_tile_r_dim <=FACE_R_DIM) && (in0_tile_c_dim > FACE_C_DIM);
     const bool is_in1_32x16 = (in1_tile_r_dim > FACE_R_DIM) && (in1_tile_c_dim <= FACE_C_DIM);
@@ -320,19 +332,24 @@ inline void matmul_configure_mop(bool transpose, const std::uint32_t ct_dim, con
     }
 
     if constexpr(high_fidelity) {
+        // DPRINT << "1. high_fidelity, CLR_NONE " << ENDL();
         TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B3A3 or B3A2 // reset srca/srcb/dest, increment phase (addr_mod_5)
     } else {
         if (reuse_a) {
             if (t_dim>1) {
+                // DPRINT << "2. REUSE_A, T_DIM>1, CLR_NONE " << ENDL();
                 TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B3A3 or B3A2 // reset srca/srcb/dest, increment phase (addr_mod_5)
             } else {
+                // DPRINT << "3. REUSE_A, T_DIM<=1, CLR_A " << ENDL();
                 TTI_MVMUL(p_setrwc::CLR_A, 0, ADDR_MOD_1, 0); // B3A3 or B3A2 // reset srca/srcb/dest, increment phase (addr_mod_5), clear src A
             }
 
         } else {
             if (t_dim>1) {
+                // DPRINT << "4. REUSE_B, T_DIM>1, CLR_NONE " << ENDL();
                 TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B3A3 or B2A1 // reset srca/srcb/dest, increment phase (addr_mod_5)
             } else {
+                // DPRINT << "5. REUSE_B, T_DIM<=1, CLR_B " << ENDL();
                 TTI_MVMUL(p_setrwc::CLR_B, 0, ADDR_MOD_1, 0); // B3A3 or B2A1 // reset srca/srcb/dest, increment phase (addr_mod_5), clear src A
             }
         }
@@ -344,11 +361,14 @@ inline void matmul_configure_mop(bool transpose, const std::uint32_t ct_dim, con
 
     if constexpr(high_fidelity) {
         if (t_dim>1) { //
+            // DPRINT << "6. high_fidelity, T_DIM>1, CLR_NONE " << ENDL();
             tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_NONE, 0, 0, 0, 0, p_setrwc::SET_F)); // Reset fidelity phase
         } else {
             if (reuse_a) {
+                // DPRINT << "7. high_fidelity, REUSE_A, T_DIM<=1, CLR_A " << ENDL();
                 tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_A, 0, 0, 0, 0, p_setrwc::SET_ABD_F));
             } else {
+                // DPRINT << "8. high_fidelity, REUSE_B, T_DIM<=1, CLR_B " << ENDL();
                 tmp.set_end_op(TT_OP_SETRWC(p_setrwc::CLR_B, 0, 0, 0, 0, p_setrwc::SET_ABD_F));
             }
 
@@ -384,13 +404,41 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
     const bool reuse_a = ct_dim>=rt_dim;
     const std::uint32_t t_dim = reuse_a ? rt_dim : ct_dim;
     const std::uint32_t rut_dim = reuse_a ? ct_dim : rt_dim; //reuse-dim
+    constexpr int MATH_FIDELITY_PHASES = get_math_num_fidelity_phases(MATH_FIDELITY_DESC);
 
     for (uint t = 0; t < t_dim; t++) {
         for (uint rut=0; rut<rut_dim; rut++) {
             math::set_dst_write_addr<DstTileLayout::Default, DstTileShape::Tile32x32>(dst_index+(reuse_a ? ct_dim*t+rut : t+rut*ct_dim));
 
             if  (t_dim == 1) {
-                ckernel_template::run(instrn_buffer);
+                #if DIDT_DEBUG == 1
+                    uint inner_loops = MOP_HIGH_FIDELITY ? MOP_NUM_FIDELITY_PHASES : 1;
+                    for (uint i = 0; i<inner_loops; i++) {
+                        if (!MOP_HIGH_FIDELITY) {
+                            if (MOP_T_DIM<=1) {
+                                if (MOP_REUSE_A) {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                                } else {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                                }
+                            }
+                        }
+
+                    }
+
+                    if (MOP_HIGH_FIDELITY) {
+                        if (MOP_T_DIM<=1) {
+                            if (MOP_REUSE_A) {
+                                TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                            } else {
+                                TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                            }
+                        }
+                    }
+                #else
+
+                    ckernel_template::run(instrn_buffer);
+                #endif
 
                 // Done with reuse. Clear srcA or srcB valid
                 if(rut == (rut_dim-1)) {
@@ -401,7 +449,35 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
                     }
                 }
             } else {
-                ckernel_template::run(instrn_buffer);
+                #if DIDT_DEBUG == 1
+                    uint inner_loops = MOP_HIGH_FIDELITY ? MOP_NUM_FIDELITY_PHASES : 1;
+                    for (uint i = 0; i<inner_loops; i++) {
+                        if (!MOP_HIGH_FIDELITY) {
+                            if (MOP_T_DIM<=1) {
+                                if (MOP_REUSE_A) {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                                } else {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                                }
+                            }
+                        }
+
+                    }
+
+                    if (MOP_HIGH_FIDELITY) {
+                        if (MOP_T_DIM<=1) {
+                            if (MOP_REUSE_A) {
+                                TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                            } else {
+                                TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                            }
+                        }
+                    }
+                #else
+
+                    ckernel_template::run(instrn_buffer);
+                #endif
+
 
                 if ((t+1)<t_dim) {
 
@@ -426,7 +502,35 @@ inline void _llk_math_matmul_(uint dst_index, const bool transpose=false, const 
                     }
 
                     math::set_dst_write_addr<DstTileLayout::Default, DstTileShape::Tile32x32>(dst_index+(reuse_a ? ct_dim*(t+1)+rut : t+1+rut*ct_dim));
-                    ckernel_template::run(instrn_buffer);
+                    #if DIDT_DEBUG == 1
+                        uint inner_loops = MOP_HIGH_FIDELITY ? MOP_NUM_FIDELITY_PHASES : 1;
+                        for (uint i = 0; i<inner_loops; i++) {
+                            if (!MOP_HIGH_FIDELITY) {
+                                if (MOP_T_DIM<=1) {
+                                    if (MOP_REUSE_A) {
+                                        TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                                    } else {
+                                        TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                                    }
+                                }
+                            }
+
+                        }
+
+                        if (MOP_HIGH_FIDELITY) {
+                            if (MOP_T_DIM<=1) {
+                                if (MOP_REUSE_A) {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_A, 0);
+                                } else {
+                                    TTI_CLEARDVALID(p_setrwc::CLR_B, 0);
+                                }
+                            }
+                        }
+                    #else
+
+                        ckernel_template::run(instrn_buffer);
+                    #endif
+
                 }
 
                 if (reuse_a) {
