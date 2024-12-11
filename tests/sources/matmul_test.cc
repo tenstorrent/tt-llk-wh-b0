@@ -61,7 +61,11 @@ void run_kernel()
     }
     _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 128); // 128 is for bfloat16
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
+    #ifdef ARCH_BLACKHOLE
+    _llk_pack_dest_init_<DstSync::SyncFull,DstTileFaceLayout::RowMajor,false>();
+    #else
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
+    #endif
     _llk_packer_wait_for_math_done_();
     _llk_pack_<DstSync::SyncFull>(0, (std::uint32_t)buffer_Dest/16-1);
     _llk_pack_dest_section_done_<DstSync::SyncFull,false>();
