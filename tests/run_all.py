@@ -7,7 +7,7 @@ def run_all_tests(test_files):
 
 if __name__ == '__main__':
     test_files = glob.glob('test_*.py')
-    os.system("/home/software/syseng/wh/tt-smi -wr 0")
+    os.system("tt-smi -r 0")
     
     exit_code = run_all_tests(test_files)
 
