@@ -123,7 +123,7 @@ if [[ "$REUSE" == true ]]; then
 
     # Detect architecture for chip
     echo "Running tt-smi -ls to detect architecture..."
-    tt-smi -ls > ../arch.dump
+    tt-smi -ls > arch.dump
     echo "tt-smi -ls completed. Running find_arch.py..."
     result=$(python3 helpers/find_arch.py "Wormhole" "Blackhole" "Grayskull" arch.dump)
     echo "Detected architecture: $result"
