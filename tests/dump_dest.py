@@ -1,12 +1,13 @@
 import pytest
 import torch
 import os
-from dbd.tt_debuda_init import init_debuda
-from dbd.tt_debuda_lib import write_to_device, read_words_from_device, run_elf
+from ttlens.tt_lens_init import init_ttlens
+from ttlens.tt_lens_lib import write_to_device, read_words_from_device, run_elf
 from pack import *
 from unpack import *
+import math
 
-context = init_debuda()
+#context = init_debuda()
 read_data = read_words_from_device("18-18", 0x1a000, word_count=512)
 print("read_data[0]", hex(read_data[0]))
 print("read_data[1]", hex(read_data[1]))
