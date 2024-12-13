@@ -24,12 +24,7 @@ void run_kernel()
 {
 
     _llk_unpack_AB_hw_configure_<>(DATA_FORMAT,DATA_FORMAT,FACE_R_DIM,0,4);
-    
-    cfg_reg_rmw_tensix<THCON_SEC0_REG2_Haloize_mode_RMW>(ReduceDim::REDUCE_ROW == ReduceDim::REDUCE_COL ? !0 : 0);
-    constexpr std::uint32_t UNP_SEL = p_setadc::UNP_AB;
-    config_unpacker_x_end<UNP_SEL>(32);
-    _llk_unpack_AB_mop_config_<BroadcastType::NONE>(false, 4, false);  // transpose of faces 0,2,1,3
-    
+    _llk_unpack_AB_init_<BroadcastType::NONE>();
     _llk_unpack_AB_<BroadcastType::NONE>((((uint32_t)buffer_A)/16)-1,(((uint32_t)buffer_B)/16)-1,0);
 }
 
@@ -47,11 +42,11 @@ using namespace ckernel::sfpu;
 void run_kernel()
 {
 
-    _llk_math_reduce_init_<PoolType::MAX, ReduceDim::REDUCE_COL, 0 >();
+    _llk_math_reduce_init_<PoolType::MAX, ReduceDim::REDUCE_ROW, 0 >();
     _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
     _llk_math_hw_configure_<false,false>(DATA_FORMAT, DATA_FORMAT);
     _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
-    _llk_math_reduce_<PoolType::MAX, ReduceDim::REDUCE_COL,0,false,false>(0,4);
+    _llk_math_reduce_<PoolType::MAX, ReduceDim::REDUCE_ROW,0,false,false>(0,4);
     _llk_math_dest_section_done_<DstSync::SyncFull,false>();
 }
 
@@ -68,14 +63,11 @@ void run_kernel()
 {
     for(int i = 0; i < 16*16*4; i++)
     {
-        buffer_Dest[i] = 0x40004000;
+        buffer_Dest[i] = 0xdeadbeef;
     }
-    
     _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 16*16*4);
-    _llk_pack_reduce_mask_config_<false, ReduceDim::REDUCE_COL>();
-
+    _llk_pack_reduce_mask_clear_();
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
-    _llk_pack_hw_configure_(DATA_FORMAT, DATA_FORMAT, 16*16*4);
     #ifdef ARCH_BLACKHOLE
     _llk_pack_dest_init_<DstSync::SyncFull,DstTileFaceLayout::RowMajor,false>();
     #else
