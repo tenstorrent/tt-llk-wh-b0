@@ -7,6 +7,9 @@ usage() {
     exit 1
 }
 
+# Default behavior: Assume not reusing if no argument is passed
+REUSE=false
+
 # Check if we passed command line arguments
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -28,7 +31,7 @@ if [[ -n "$VIRTUAL_ENV" ]]; then
 fi
 
 # If we're not reusing, continue with setup
-if [[ -z "$REUSE" ]]; then
+if [[ "$REUSE" == false ]]; then
     # Update packages and install gawk (if necessary)
     echo "Updating system packages..."
     sudo apt update
@@ -112,7 +115,7 @@ if [[ -z "$REUSE" ]]; then
 fi
 
 # **************** REUSE ENVIRONMENT SETUP ****************************
-if [[ -n "$REUSE" ]]; then
+if [[ "$REUSE" == true ]]; then
     echo "Reusing existing virtual environment setup..."
 
     # Activate the existing virtual environment
