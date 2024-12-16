@@ -4,10 +4,17 @@
 #include "llk_defs.h"
 #include "ckernel.h"
 
+
 // Globals
 uint32_t unp_cfg_context = 0;
 uint32_t pack_sync_tile_dst_ptr = 0;
 volatile uint32_t tt_l1_ptr l1_buffer[16] __attribute__ ((section (".text#"))) __attribute__ ((aligned (16)));
+
+#if defined(FORMAT_INT32) || defined(FORMAT_FLOAT32)
+const bool unpack_to_dest = true;
+#else
+const bool unpack_to_dest = false;
+#endif
 
 #ifdef LLK_TRISC_UNPACK
 
@@ -16,12 +23,6 @@ volatile uint32_t tt_l1_ptr l1_buffer[16] __attribute__ ((section (".text#"))) _
 #include "../helpers/params.h"
 
 volatile uint32_t* buffer_A = (volatile uint32_t*)0x1b000;
-
-#if defined(FORMAT_INT32) || defined(FORMAT_FLOAT32)
-const bool unpack_to_dest = true;
-#else
-const bool unpack_to_dest = false;
-#endif
 
 void run_kernel()
 {
@@ -41,14 +42,11 @@ void run_kernel()
 using namespace ckernel;
 using namespace ckernel::sfpu;
 
-#if defined(FORMAT_INT32) || defined(FORMAT_FLOAT32)
-const bool unpack_to_dest = true;
-#else
-const bool unpack_to_dest = false;
-#endif
-
 void run_kernel()
 {
+    TTI_SEMINIT(1,0,ckernel::semaphore::MATH_DONE);
+    TTI_SEMINIT(1,0,ckernel::semaphore::UNPACK_TO_DEST);
+
     // copy srca to dest
     _llk_math_eltwise_unary_datacopy_init_<DataCopyType::A2D, BroadcastType::NONE, false, false>(0, 0, 4, DATA_FORMAT);
     _llk_math_pack_sync_init_<DstSync::SyncFull,false>();
