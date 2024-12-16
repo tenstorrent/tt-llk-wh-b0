@@ -1,7 +1,13 @@
 #!/bin/bash
 
-#Initial reset
-/home/software/syseng/wh/tt-smi -wr 0
+# Check if CHIP_ARCH is set to wormhole or blackhole
+if [[ "$CHIP_ARCH" = "wormhole" ]]; then
+    /home/software/syseng/wh/tt-smi -wr 0
+elif [[ "$CHIP_ARCH" = "blackhole" ]]; then
+    tt-smi -r 0
+else
+    echo "No architecture detected"
+fi
 
 # Function to display usage instructions
 usage() {
