@@ -56,7 +56,7 @@ def write_stimuli_to_l1(buffer_A, buffer_B, stimuli_format):
         write_to_device("0,0", 0x1b000, pack_fp16(buffer_A))
         write_to_device("0,0", 0x1c000, pack_fp16(buffer_B))
 
-@pytest.mark.parametrize("format", ["Float16_b"])#, "Float16"])
+@pytest.mark.parametrize("format", ["Float16_b", "Float16"])
 @pytest.mark.parametrize("testname", ["matmul_test"])
 def test_all(format, testname):
 
