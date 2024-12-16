@@ -473,10 +473,11 @@ inline void record_kernel_runtime(uint64_t kernel_runtime) {
 void debug_dump(const uint8_t *data, uint32_t byte_size);
 void debug_dump_seek(uint8_t offset);
 
-inline void stall_kernel(uint32_t num_cycles) {
-#if DELAY_EN > 0
-    TT_LLK_DUMP("stall_kernel({})", num_cycles);
-    uint32_t start_clk_l = reg_read(RISCV_DEBUG_REG_WALL_CLOCK_L);
+template <uint32_t num_cycles = 0>
+inline void stall_kernel(uint32_t start_clk_l) {
+// #if DELAY_EN > 0
+    // TT_LLK_DUMP("stall_kernel({})", num_cycles);
+    // uint32_t start_clk_l = reg_read(RISCV_DEBUG_REG_WALL_CLOCK_L);
     uint32_t elapsed_time = 0;
     while (elapsed_time <= num_cycles) {
         uint32_t current_clk_l = reg_read(RISCV_DEBUG_REG_WALL_CLOCK_L);
@@ -486,7 +487,7 @@ inline void stall_kernel(uint32_t num_cycles) {
             elapsed_time = 0xffffffff - (start_clk_l - current_clk_l);
         }
     }
-#endif
+// #endif
 }
 
 #if defined(PERF_DUMP) || DELAY_EN > 0
