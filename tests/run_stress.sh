@@ -1,14 +1,41 @@
 #!/bin/bash
 
-# initial reset of board 0
+#Initial reset
 /home/software/syseng/wh/tt-smi -wr 0
+
+# Function to display usage instructions
+usage() {
+    echo "Usage: $0 --repeat <number_of_repeats> --test <test_name>"
+    exit 1
+}
+
+# Parse command-line arguments
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --repeat)
+            repeat_count="$2"
+            shift 2
+            ;;
+        --test)
+            test_name="$2"
+            shift 2
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+
+# Ensure both parameters are provided
+if [[ -z "$repeat_count" || -z "$test_name" ]]; then
+    usage
+fi
 
 pass_count=0
 fail_count=0
 
-test_name="test_eltwise.py"
-
-for i in {1..100}; do
+# Run the test for the specified number of iterations
+for i in $(seq 1 "$repeat_count"); do
     pytest "$test_name" > /dev/null 2>&1
     result=$?
     
