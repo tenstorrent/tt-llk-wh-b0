@@ -135,5 +135,13 @@ inline void _calculate_sfpu_binary_(const uint dst_offset)
     }
 }
 
+template <bool APPROXIMATION_MODE /*unused*/, int BINOP_MODE>
+inline void _sfpu_binary_init_()
+{
+    if constexpr (BINOP_MODE == DIV_BINARY) {
+        _init_reciprocal_<APPROXIMATION_MODE>();
+    }
+}
+
 }  // namespace sfpu
 }  // namespace ckernel
