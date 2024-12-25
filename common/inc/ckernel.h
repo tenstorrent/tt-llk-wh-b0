@@ -88,6 +88,9 @@ extern volatile uint tt_reg_ptr *mailbox_base[4];
 extern volatile uint tt_reg_ptr *dbg_event_scratch;
 extern volatile uint tt_reg_ptr *trisc_l1_mailbox;
 extern volatile uint8_t tt_l1_ptr *debug_buffer;
+extern volatile uint tt_l1_ptr *dummy_compute_sync_addr_data_arrived;
+extern volatile uint tt_l1_ptr *dummy_compute_sync_addr_math_ack;
+extern volatile uint tt_l1_ptr *dummy_compute_sync_post_code;
 
 extern uint32_t cfg_state_id;
 extern uint32_t dest_offset_id;

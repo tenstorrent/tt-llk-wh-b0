@@ -16,6 +16,91 @@
 
 using namespace ckernel;
 
+inline void _llk_math_dummy_matmul_init_() {
+
+    addr_mod_t{
+        .srca = {.incr = 0, .clr = 0, .cr = 0},
+        .srcb = {.incr = 8, .clr = 0, .cr = 0},
+        .dest = {.incr = 8, .clr = 0, .cr = 0},
+    }
+    .set(ADDR_MOD_0);
+    addr_mod_t{
+        .srca = {.incr = 16, .clr = 0, .cr = 0},
+        .srcb = {.incr = 8, .clr = 0, .cr = 0},
+        .dest = {.incr = 8, .clr = 0, .cr = 0},
+    }
+    .set(ADDR_MOD_1);
+    addr_mod_t{
+        .srca = {.incr = 0, .clr = 0, .cr = 1},
+        .srcb = {.incr = 0, .clr = 0, .cr = 1},
+        .dest = {.incr = 0, .clr = 0, .cr = 1},
+    }
+    .set(ADDR_MOD_2);
+    addr_mod_t{
+        .srca = {.incr = 0, .clr = 0, .cr = 0},
+        .srcb = {.incr = 0, .clr = 0, .cr = 0},
+        .dest = {.incr = 0, .clr = 0, .cr = 0},
+    }
+    .set(ADDR_MOD_3);
+    
+    constexpr int replay_buf_len = 8;
+    TT_REPLAY(ckernel::math::replay_buf_offset, replay_buf_len, 0, 1);
+    {
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_2, 0);
+    }
+    
+    constexpr uint inner_loops = 4;
+    constexpr uint outer_loops = 1;
+    ckernel_template tmp(outer_loops, inner_loops, TT_OP_REPLAY(ckernel::math::replay_buf_offset, replay_buf_len, 0, 0));
+    tmp.program(instrn_buffer);
+
+    math::reset_counters(p_setrwc::SET_ABD_F);
+}
+
+inline void _llk_math_dummy_matmul_continous() {
+    // Runs for 32 cycles
+    _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
+    math::set_dst_write_addr<DstTileLayout::Default, DstTileShape::Tile32x32>(0);
+    TTI_SETDVALID(0b11);        // Set DVALID on both SRCA and SRCB
+    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+    bool add_dummy = true;
+    while (add_dummy) {
+        ckernel_template::run(instrn_buffer);
+        // for (uint i=0; i<2; i++) {
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
+        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_2, 0);
+        //     TTI_REPLAY(ckernel::math::replay_buf_offset, 8, 0, 0);
+        // }
+        dummy_compute_sync_post_code[1] = 0xdada01;
+        if (*dummy_compute_sync_addr_data_arrived == 1) {
+            *dummy_compute_sync_addr_math_ack = 1;
+            dummy_compute_sync_post_code[1] = 0xdada02;
+            while (*dummy_compute_sync_addr_data_arrived == 1);
+            *dummy_compute_sync_addr_math_ack = 0;
+            
+            TTI_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_ABD_F);
+            TT_ZEROACC(p_zeroacc::CLR_HALF, ADDR_MOD_3, (dest_offset_id % 2));
+            add_dummy = false;
+            dummy_compute_sync_post_code[1] = 0xdada00;
+        }
+    }
+}
+
 template <int MATH_FIDELITY_DESC, DstTileFaceLayout FaceLayout=DstTileFaceLayout::ColMajor>
 inline void matmul_configure_addrmod(const bool transpose, const std::uint32_t ct_dim, const std::uint32_t rt_dim, const std::uint32_t kt_dim, const std::uint32_t in0_tile_r_dim = TILE_R_DIM, const std::uint32_t in0_tile_c_dim = TILE_C_DIM, const std::uint32_t in1_tile_r_dim = TILE_R_DIM, const std::uint32_t in1_tile_c_dim = TILE_C_DIM, const bool partial_face = false) {
 
