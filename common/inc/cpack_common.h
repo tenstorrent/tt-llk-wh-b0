@@ -632,4 +632,118 @@ namespace ckernel::packer
       TTI_STOREIND (1, 0, p_ind::LD_16B, LO_16(0), p_ind::INC_NONE, p_gpr_pack::TILE_HEADER, p_gpr_pack::OUTPUT_ADDR);
    }
 
+   // Choose register by its id (1-4)
+   inline pack_config_t read_pack_config(uint reg_id) {
+
+      pack_config_u config = {.val = 0};
+     
+      uint32_t reg_addr = 0;
+      switch (reg_id) {
+            case 1:
+               reg_addr = THCON_SEC0_REG1_Row_start_section_size_ADDR32;
+               break;
+            case 2:
+               reg_addr = THCON_SEC0_REG8_Row_start_section_size_ADDR32;
+               break;
+            case 3:
+               reg_addr = THCON_SEC1_REG1_Row_start_section_size_ADDR32;
+               break;
+            case 4:
+               reg_addr = THCON_SEC1_REG8_Row_start_section_size_ADDR32;
+               break;
+            default:
+               return config.f;
+      }
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
+   
+      config.val[0] = cfg[reg_addr];
+      config.val[1] = cfg[reg_addr + 1];
+      config.val[2] = cfg[reg_addr + 2];
+      config.val[3] = cfg[reg_addr + 3];
+
+      return config.f;
+   }
+
+   inline relu_config_t read_relu_conifg() {
+
+      relu_config_u config;
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+      config.val[0] = cfg[ALU_ACC_CTRL_Zero_Flag_disabled_src_ADDR32];
+
+      return config.r;
+   }
+
+   inline dest_rd_ctrl_t read_dest_rd_ctrl() {
+      dest_rd_ctrl_u dest;
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+
+      dest.val = cfg[PCK_DEST_RD_CTRL_Read_32b_data_ADDR32];
+
+      return dest.f;
+   }
+
+   // Choose register by its id (1-4).
+   inline pck_edge_offset_t read_pck_edge_offset(uint reg_id) {
+
+      pck_edge_offset_u edge = {.val=0};
+
+      uint32_t reg_addr = 0;
+      switch (reg_id) {
+         case 1:
+               reg_addr = PCK_EDGE_OFFSET_SEC0_mask_ADDR32;
+               break;
+         case 2:
+               reg_addr = PCK_EDGE_OFFSET_SEC1_mask_ADDR32;
+               break;
+         case 3:
+               reg_addr = PCK_EDGE_OFFSET_SEC2_mask_ADDR32;
+               break;
+         case 4:
+               reg_addr = PCK_EDGE_OFFSET_SEC3_mask_ADDR32;
+               break;
+         default:
+               return edge.f;
+      }
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+      edge.val = cfg[reg_addr];
+
+      return edge.f;
+   }
+
+   inline pack_counters_t read_pack_counters(uint reg_id) {
+
+      pack_counters_u counters = {.val=0};
+
+      uint32_t reg_addr = 0;
+      switch (reg_id) {
+         case 1:
+               reg_addr = PACK_COUNTERS_SEC0_pack_per_xy_plane_ADDR32;
+               break;
+         case 2:
+               reg_addr = PACK_COUNTERS_SEC1_pack_per_xy_plane_ADDR32;
+               break;
+         case 3:
+               reg_addr = PACK_COUNTERS_SEC2_pack_per_xy_plane_ADDR32;
+               break;
+         case 4:
+               reg_addr = PACK_COUNTERS_SEC3_pack_per_xy_plane_ADDR32;
+               break;
+         default:
+               return counters.f;
+      }
+
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+      counters.val = cfg[reg_addr];
+
+      return counters.f;      
+   }
+
 }
