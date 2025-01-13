@@ -631,5 +631,54 @@ namespace ckernel::packer
    {
       TTI_STOREIND (1, 0, p_ind::LD_16B, LO_16(0), p_ind::INC_NONE, p_gpr_pack::TILE_HEADER, p_gpr_pack::OUTPUT_ADDR);
    }
+ // READERS FOR CONFIG STRUCTS
+
+   inline pack_config_t read_pack_config(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg ) {
+
+      pack_config_u config = {.val = 0};
+
+      config.val[0] = cfg[reg_addr];
+      config.val[1] = cfg[reg_addr + 1];
+      config.val[2] = cfg[reg_addr + 2];
+      config.val[3] = cfg[reg_addr + 3];
+
+      return config.f;
+   }
+
+   inline relu_config_t read_relu_config() {
+
+      relu_config_u config;
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+      config.val[0] = cfg[ALU_ACC_CTRL_Zero_Flag_disabled_src_ADDR32];
+
+      return config.r;
+   }
+
+   inline dest_rd_ctrl_t read_dest_rd_ctrl() {
+      dest_rd_ctrl_u dest;
+
+      // Get pointer to registers for current state ID
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+
+      dest.val = cfg[PCK_DEST_RD_CTRL_Read_32b_data_ADDR32];
+
+      return dest.f;
+   }
+
+   inline pck_edge_offset_t read_pck_edge_offset(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
+      pck_edge_offset_u edge = {.val=0};
+      edge.val = cfg[reg_addr];
+
+      return edge.f;
+   }
+
+   inline pack_counters_t read_pack_counters(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
+      pack_counters_u counters = {.val=0};
+      counters.val = cfg[reg_addr];
+
+      return counters.f;      
+   }
 
 }

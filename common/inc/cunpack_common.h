@@ -450,4 +450,39 @@ namespace ckernel::unpacker
 
    }
 
+   // READERS FOR STRUCTS
+
+   inline unpack_tile_descriptor_t read_unpack_tile_descriptor() {
+      unpack_tile_descriptor_u tile_descriptor;
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+
+      tile_descriptor.val[0] = cfg[THCON_SEC0_REG0_TileDescriptor_ADDR32];
+      tile_descriptor.val[1] = cfg[THCON_SEC0_REG0_TileDescriptor_ADDR32 + 1];
+      tile_descriptor.val[2] = cfg[THCON_SEC1_REG0_TileDescriptor_ADDR32];
+      tile_descriptor.val[3] = cfg[THCON_SEC1_REG0_TileDescriptor_ADDR32 + 1];
+
+      return tile_descriptor.f;
+   }
+
+   inline unpack_config_t read_unpack_config() {
+      unpack_config_u config;
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+
+      config.val[0] = cfg[THCON_SEC0_REG2_Out_data_format_ADDR32];
+      config.val[1] = cfg[THCON_SEC0_REG2_Out_data_format_ADDR32 + 1];
+      config.val[2] = cfg[THCON_SEC1_REG2_Out_data_format_ADDR32];
+      config.val[3] = cfg[THCON_SEC1_REG2_Out_data_format_ADDR32 + 1];
+
+      return config.f;
+   }
+
+   inline alu_config_t read_alu_config() {
+      alu_config_u config;
+      volatile uint tt_reg_ptr *cfg = get_cfg_pointer();
+
+      config.val = cfg[ALU_ROUNDING_MODE_Fpu_srnd_en_ADDR32];
+
+      return config.f;
+   }
+
 }
