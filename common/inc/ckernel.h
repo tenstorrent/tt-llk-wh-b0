@@ -473,7 +473,7 @@ inline void record_kernel_runtime(uint64_t kernel_runtime) {
 void debug_dump(const uint8_t *data, uint32_t byte_size);
 void debug_dump_seek(uint8_t offset);
 
-template <uint32_t num_cycles = 0>
+template <uint32_t num_cycles = 0, uint32_t skip_delay = 0>
 inline void stall_kernel(uint32_t start_clk_l) {
 // #if DELAY_EN > 0
     // TT_LLK_DUMP("stall_kernel({})", num_cycles);
@@ -485,6 +485,11 @@ inline void stall_kernel(uint32_t start_clk_l) {
             elapsed_time = current_clk_l - start_clk_l;
         } else {
             elapsed_time = 0xffffffff - (start_clk_l - current_clk_l);
+        }
+        if constexpr (skip_delay) {
+            if (elapsed_time < skip_delay) {
+                break;
+            }
         }
     }
 // #endif
