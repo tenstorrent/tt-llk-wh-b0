@@ -10,6 +10,7 @@
 #include "ckernel_globals.h"
 #include "llk_defs.h"
 
+#include <vector>
 
 namespace ckernel::packer
 {
@@ -668,7 +669,7 @@ namespace ckernel::packer
       return dest.f;
    }
 
-   inline pck_edge_offset_t read_pck_edge_offset(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
+   inline pck_edge_offset_t read_pack_edge_offset(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
       pck_edge_offset_u edge = {.val=0};
       edge.val = cfg[reg_addr];
 
