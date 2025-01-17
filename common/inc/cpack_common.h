@@ -650,7 +650,7 @@ namespace ckernel::packer
 
    inline std::array<pack_config_t, 4> read_pack_config() {
       std::array<pack_config_t, 4> config_vec;
-      
+
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
 
@@ -691,11 +691,25 @@ namespace ckernel::packer
       return edge.f;
    }
 
-   inline pack_counters_t read_pack_counters(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
+   inline pack_counters_t read_pack_counters_helper(uint32_t reg_addr, const volatile uint tt_reg_ptr* cfg) {
       pack_counters_u counters = {.val=0};
       counters.val = cfg[reg_addr];
 
       return counters.f;      
+   }
+
+   inline std::array<pack_counters_t, 4> read_pack_counters() {
+      std::array<pack_counters_t, 4> config_vec;
+
+      // Get pointer to registers for current state ID 
+      volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
+
+      config_vec[0] = read_pack_counters_helper(PACK_COUNTERS_SEC0_pack_per_xy_plane_ADDR32, cfg);
+      config_vec[1] = read_pack_counters_helper(PACK_COUNTERS_SEC1_pack_per_xy_plane_ADDR32, cfg);
+      config_vec[2] = read_pack_counters_helper(PACK_COUNTERS_SEC2_pack_per_xy_plane_ADDR32, cfg);
+      config_vec[3] = read_pack_counters_helper(PACK_COUNTERS_SEC3_pack_per_xy_plane_ADDR32, cfg);
+
+      return config_vec; 
    }
 
 }
