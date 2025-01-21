@@ -384,8 +384,8 @@ inline void _bitonic_topk_phases_steps(
     topk_replay_init = -1;
 }
 
-template <bool APPROXIMATION_MODE, int ITERATIONS>
-inline void _bitonic_topk_merge(const bool idir, const int m_iter, const int k)
+template <bool APPROXIMATION_MODE, bool idir, int ITERATIONS>
+inline void _bitonic_topk_merge(const int m_iter, const int k)
 {
     uint dst_addr_offset = 0;
     for (int face=0; face<2; face++) {
