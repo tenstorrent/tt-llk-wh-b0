@@ -18,6 +18,7 @@ namespace ckernel::unpacker
 {
    constexpr uint32_t TILE_DESC_SIZE = 2; //Unpacker descriptor size in dwords
    constexpr uint32_t CONFIG_SIZE = 2; //Unpacker configuration size in dwords
+   constexpr uint32_t NUM_UNPACKERS = 2; //Number of unpackers
 
    // Unpack tile descriptor
    typedef struct {
@@ -465,8 +466,8 @@ namespace ckernel::unpacker
       return tile_descriptor.f;
    }
 
-   inline std::array<unpack_tile_descriptor_t, 2> read_unpack_tile_descriptor() {
-      std::array<unpack_tile_descriptor_t, 2> tile_descriptor_vec;
+   inline std::array<unpack_tile_descriptor_t, NUM_UNPACKERS> read_unpack_tile_descriptor() {
+      std::array<unpack_tile_descriptor_t, NUM_UNPACKERS> tile_descriptor_vec;
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
 
@@ -487,8 +488,8 @@ namespace ckernel::unpacker
       return config.f;
    }
 
-   inline std::array<unpack_config_t, 2> read_unpack_config() {
-      std::array<unpack_config_t, 2> config_vec;
+   inline std::array<unpack_config_t, NUM_UNPACKERS> read_unpack_config() {
+      std::array<unpack_config_t, NUM_UNPACKERS> config_vec;
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
 

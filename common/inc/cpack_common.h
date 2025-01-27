@@ -15,6 +15,7 @@
 namespace ckernel::packer
 {
    constexpr uint32_t PACK_CNT       = 4;
+   constexpr uint32_t NUM_PACKERS = 4; //Number of packers
 
 
    constexpr uint PACK_SEL(const uint pack_count)
@@ -648,8 +649,8 @@ namespace ckernel::packer
       return config.f;
    }
 
-   inline std::array<pack_config_t, 4> read_pack_config() {
-      std::array<pack_config_t, 4> config_vec;
+   inline std::array<pack_config_t, NUM_PACKERS> read_pack_config() {
+      std::array<pack_config_t, NUM_PACKERS> config_vec;
 
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
@@ -691,8 +692,8 @@ namespace ckernel::packer
       return edge.f;
    }
 
-   inline std::array<pck_edge_offset_t, 4> read_pack_edge_offset() {
-      std::array<pck_edge_offset_t, 4> edge_vec;
+   inline std::array<pck_edge_offset_t, NUM_PACKERS> read_pack_edge_offset() {
+      std::array<pck_edge_offset_t, NUM_PACKERS> edge_vec;
 
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
@@ -712,8 +713,8 @@ namespace ckernel::packer
       return counters.f;      
    }
 
-   inline std::array<pack_counters_t, 4> read_pack_counters() {
-      std::array<pack_counters_t, 4> counters_vec;
+   inline std::array<pack_counters_t, NUM_PACKERS> read_pack_counters() {
+      std::array<pack_counters_t, NUM_PACKERS> counters_vec;
 
       // Get pointer to registers for current state ID 
       volatile uint tt_reg_ptr* cfg = get_cfg_pointer();
