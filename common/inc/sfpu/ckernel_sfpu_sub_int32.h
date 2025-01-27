@@ -28,21 +28,17 @@ inline void _sub_int32_(const uint dst_offset) {
     // Output is int32
     #pragma GCC unroll 8
     for (int d = 0; d < ITERATIONS; d++) {
+        // operand B - int32
         TT_SFPLOAD(1, sfpload_instr_mod, 3, dst_offset*64);
-        //TT_SFPLOAD(1, sfpload_instr_mod, 3, dst_offset * 64);
+        // invert B's bits, then add 1 to switch the sign
         TTI_SFPNOT(0, 1, 0, 0);
         TT_SFPLOADI(1, sfpload_instr_mod, 1);
         TTI_SFPIADD(0, 1, 0, 4);
         TTI_NOP;
+
+        // load A, then calculate A + (-B)
         TTI_SFPLOAD(1, sfpload_instr_mod, 3, 0);
         TTI_SFPIADD(0, 1, 0, 4);
-
-        // operand A - int32
-        //TTI_SFPLOAD(0, sfpload_instr_mod, 3, 0);
-        // operand B - int32
-        //TT_SFPLOAD(1, sfpload_instr_mod, 3, dst_offset * 64);
-        //TTI_SFPIADD(0, 1, 0, 4);
-        // MAD has a 2-cycle pipeline latency so we need one cycle latency until next instr can consume the result
         TTI_NOP;
         // LREG_0 -> dest as int32
         TTI_SFPSTORE(0, sfpload_instr_mod, 3, 0);
