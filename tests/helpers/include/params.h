@@ -1,6 +1,9 @@
 #ifndef PARAMS_H
 #define PARAMS_H
 
+#include <cstdint>
+#include <cstdarg>
+
 #ifdef LLK_TRISC_UNPACK
 
     #ifdef FORMAT_FLOAT16_B
@@ -48,6 +51,13 @@
     #ifdef ELTWISE_BINARY_MUL
         #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWMUL
     #endif
+    // TO BE IMPLEMENTED IN LLKs
+    #ifdef ELTWISE_BINARY_DIV
+        #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWDIV
+    #endif
+    #ifdef ELTWISE_BINARY_LESS
+        #define ELTWISE_BINARY_OP EltwiseBinaryType::ELWLESS
+    #endif
 
     #ifdef SFPU_OP_SQRT
         #define SFPU_OPERATION sqrt
@@ -65,6 +75,18 @@
 #endif
 
 #ifdef LLK_TRISC_PACK
+
+inline void process_addresses(volatile uint32_t* buffer_Dest[], int n, int first, ...) {
+    buffer_Dest[0] = (volatile uint32_t*)first;
+
+    va_list args;
+    va_start(args, first);
+    for (int i = 1; i < n; ++i) {
+        int num = va_arg(args, int);
+        buffer_Dest[i] = (volatile uint32_t*)num;
+    }
+    va_end(args);
+}
 
     #ifdef FORMAT_FLOAT16_B
         #define DATA_FORMAT (uint32_t)DataFormat::Float16_b
