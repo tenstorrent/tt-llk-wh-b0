@@ -86,9 +86,9 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
         }
     } else if constexpr (BType == BroadcastType::SCALAR) {
         static_assert((!acc_to_dest) && "accumulate into dest with broadcast scaler is not supported!");
-        const uint32_t outerloop = num_faces;
+        const uint32_t outerloop = 1;
         constexpr uint32_t innerloop = 1;
-        ckernel_template tmp(outerloop, innerloop, unpack_srcb_inc_z_0);
+        ckernel_template tmp(outerloop, innerloop, unpack_srca_set_dvalid, unpack_srcb_inc_z_0);
         tmp.program(instrn_buffer);
     } else {
         if (transpose_of_faces) {
