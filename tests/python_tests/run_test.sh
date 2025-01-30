@@ -50,9 +50,10 @@ if [[ "$all_tests" = true ]]; then
     test_files=$(ls test_*.py)
 
     for test_file in $test_files; do
+        /home/software/syseng/wh/tt-smi -wr 0
         echo "Running $test_file"
         pytest --color=yes -rA "$test_file"
-        tt-smi -r 0
+        cd .. && make clean && cd python_tests
     done
     
     exit 0

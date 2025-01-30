@@ -26,12 +26,24 @@ using vptr_uint = volatile uint32_t*;
 
 int main()
 {
+	// #ifdef LLK_TRISC_UNPACK
+	// *mailbox = 0x123;
+	// #endif
+
+	// #ifdef LLK_TRISC_MATH
+	// *mailbox = 0x321;
+	// #endif
+
+	// #ifdef LLK_TRISC_PACK
+	// *mailbox = 0x456;
+	// #endif
+
     //FWEVENT("Launching proudction env kernels");
 	for (int i = 0; i < 64; i++) regfile[i] = 0;
 	reset_cfg_state_id();
 	reset_dest_offset_id();
 
-	//tensix_sync();
+	tensix_sync();
     run_kernel();
 
 	*mailbox = KERNEL_COMPLETE; // 0x1
