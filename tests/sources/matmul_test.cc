@@ -66,16 +66,23 @@ void run_kernel()
     {
         buffer_Dest[i] = 0xdeadbeef;
     }
-    _llk_pack_hw_configure_<false, is_fp32_dest_acc_en, false >(DATA_FORMAT, DATA_FORMAT, 128); 
+    #ifdef ARCH_BLACKHOLE
+    _llk_pack_hw_configure_<false, is_fp32_dest_acc_en, false>(DATA_FORMAT, DATA_FORMAT, 16*16*4);
+    #else
+    _llk_pack_hw_configure_<false, is_fp32_dest_acc_en>(DATA_FORMAT, DATA_FORMAT, 16*16*4);
+    #endif
+
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
+    
     #ifdef ARCH_BLACKHOLE
     _llk_pack_dest_init_<DstSync::SyncFull,DstTileFaceLayout::RowMajor,is_fp32_dest_acc_en>();
     #else
     _llk_pack_dest_init_<DstSync::SyncFull, DstTileFaceLayout::RowMajor, false, false>();
     #endif
+
     _llk_packer_wait_for_math_done_();
-    _llk_pack_<DstSync::SyncFull, false, is_fp32_dest_acc_en>(0, (std::uint32_t)buffer_Dest/16-1);
-    _llk_pack_dest_section_done_<DstSync::SyncFull, is_fp32_dest_acc_en>();
+    _llk_pack_<DstSync::SyncFull,false, is_fp32_dest_acc_en>(0, (std::uint32_t)buffer_Dest/16-1);
+    _llk_pack_dest_section_done_<DstSync::SyncFull,is_fp32_dest_acc_en>();
 }
 
 #endif

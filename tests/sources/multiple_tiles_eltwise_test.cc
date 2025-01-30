@@ -77,8 +77,14 @@ void run_kernel()
 {
     process_addresses(buffer_Dest,KERN_CNT,PACK_ADDRS);
 
+    #ifdef ARCH_BLACKHOLE
     _llk_pack_hw_configure_<false, is_fp32_dest_acc_en, false>(DATA_FORMAT, DATA_FORMAT, 16*16*4);
+    #else
+    _llk_pack_hw_configure_<false, is_fp32_dest_acc_en>(DATA_FORMAT, DATA_FORMAT, 16*16*4);
+    #endif
+
     _llk_pack_init_<false, false, DstTileFaceLayout::RowMajor, false>(DATA_FORMAT);
+    
     #ifdef ARCH_BLACKHOLE
     _llk_pack_dest_init_<DstSync::SyncFull,DstTileFaceLayout::RowMajor,is_fp32_dest_acc_en>();
     #else
