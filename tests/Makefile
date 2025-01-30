@@ -23,7 +23,7 @@ endif
 
 OPTIONS_LINK=-fexceptions -Wl,-z,max-page-size=16 -Wl,-z,common-page-size=16 -nostartfiles -Wl,--trace
 INCLUDES = -I../llk_lib -I../common/inc -I../common/inc/sfpu
-INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/$(CHIP_ARCH) -Isfpi/include -Ihelpers/include -Ihelpers/operations
+INCLUDES += -I../firmware/riscv/common -I../firmware/riscv/$(CHIP_ARCH)/ -Isfpi/include -Ihelpers/include -Ihelpers/operations
 
 FORMAT_ARG:=-D$(format) 
 

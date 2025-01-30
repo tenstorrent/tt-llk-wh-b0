@@ -31,7 +31,7 @@ int main()
 	reset_cfg_state_id();
 	reset_dest_offset_id();
 
-	tensix_sync();
+	//tensix_sync();
     run_kernel();
 
 	*mailbox = KERNEL_COMPLETE; // 0x1

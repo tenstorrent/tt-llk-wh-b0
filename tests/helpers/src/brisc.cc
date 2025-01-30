@@ -54,19 +54,21 @@ void device_setup() {
     *((uint32_t volatile*)RISCV_DEBUG_REG_DEST_CG_CTRL) = 0;
 #endif
 
+    #ifdef ARCH_BLACKHOLE // TODO see what happens with WH
     WRITE_REG(RISCV_TDMA_REG_CLK_GATE_EN, 0x3f);  // Enable clock gating
-
     set_deassert_addresses();
-
     // Invalidate tensix icache for all 4 risc cores
     cfg_regs[RISCV_IC_INVALIDATE_InvalidateAll_ADDR32] = RISCV_IC_BRISC_MASK | RISCV_IC_TRISC_ALL_MASK | RISCV_IC_NCRISC_MASK;
+    #endif
+
     
     // Clear destination registers
     #ifdef ARCH_BLACKHOLE
     TTI_ZEROACC(p_zeroacc::CLR_ALL, 0, 0, 1, 0);
     #else
-    TTI_ZEROACC(p_zeroacc::CLR_ALL, 1, 0);
+    TTI_ZEROACC(p_zeroacc::CLR_ALL, 0, 0);
     #endif
+
 
     // Enable CC stack
 	TTI_SFPENCC(3,0,0,10);
@@ -95,5 +97,6 @@ void device_setup() {
 }
 
 int main(){
-    device_setup();
+    //device_setup();
+    for(;;){}
 }
