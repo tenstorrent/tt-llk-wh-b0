@@ -53,11 +53,10 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
         TTI_UNPACR_NOP(SrcA, p_unpacr_nop::UNP_ZEROSRC);
         TTI_UNPACR_NOP(SrcA, p_unpacr_nop::UNP_SET_DVALID);
         TTI_REPLAY(2, 2, 0, 1);
-        TTI_UNPACR_NOP(SrcB, p_unpacr_nop::UNP_ZEROSRC);
-        TTI_UNPACR_NOP(SrcB, p_unpacr_nop::UNP_SET_DVALID);
-        TTI_REPLAY(4, 2, 0, 1);
         TTI_UNPACR(SrcB, 0b1 /*Z inc*/, 0, 0, 0, 1 /* Set OvrdThreadId*/, 1 /*Set Dvalid*/, p_unpacr::RAREFYB_DISABLE, 0, 0, 0, 0, 1);
         TTI_UNPACR(SrcB, 0b1 /*Z inc*/, 0, 0, 0, 1 /* Set OvrdThreadId*/, 1 /*Set Dvalid*/, p_unpacr::RAREFYB_DISABLE, 0, 0, 0, 0, 1);
+        static constexpr uint unpack_srca_zerosrc_set_dvalid = TT_OP_REPLAY(0,2,0,0);
+        static constexpr uint unpack_srcb_unpack_srcb = TT_OP_REPLAY(2,2,0,0);
     #endif
 
     if (unpack_to_dest && is_32bit_input(unpack_src_format, unpack_dst_format)) {
@@ -70,17 +69,17 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
         constexpr uint32_t outerloop = 1; //TODO: add support for num_faces, add support for dest to srcB
         ckernel_template tmp(outerloop, innerloop, unpack_srcb, srcb_set_z_2);
         // ELWADD used in datacopy due to WH broadcast bug, use zerosrca regardless of acc_to_dest
-        tmp.set_start_op(TT_OP_REPLAY(0,2,0,0));
+        tmp.set_start_op(unpack_srca_zerosrc_set_dvalid);
         tmp.set_end_op(unpack_srcb);
         tmp.program(instrn_buffer);
     } else if constexpr (BType == BroadcastType::ROW) {
         constexpr uint32_t innerloop = 1;
         constexpr uint32_t outerloop = 1; //TODO: add support for num_faces
-        ckernel_template tmp(outerloop, innerloop, TT_OP_REPLAY(4,2,0,0), srcb_clear_z);
+        ckernel_template tmp(outerloop, innerloop, unpack_srcb_unpack_srcb, srcb_clear_z);
         if constexpr (acc_to_dest) {
-            tmp.set_start_op(TT_OP_REPLAY(0,2,0,0));
+            tmp.set_start_op(unpack_srca_zerosrc_set_dvalid);
         }
-        tmp.set_end_op(TT_OP_REPLAY(4,2,0,0));
+        tmp.set_end_op(unpack_srcb_unpack_srcb);
         tmp.program(instrn_buffer);
     } else if constexpr (BType == BroadcastType::SCALAR) {
         static_assert((!acc_to_dest) && "accumulate into dest with broadcast scaler is not supported!");
@@ -88,13 +87,13 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
         constexpr uint32_t innerloop = 1;
         ckernel_template tmp(outerloop, innerloop, unpack_srcb_inc_z_0);
         // ELWADD used in datacopy due to WH broadcast bug, use zerosrca regardless of acc_to_dest
-        tmp.set_start_op(TT_OP_REPLAY(0,2,0,0));
+        tmp.set_start_op(unpack_srca_zerosrc_set_dvalid);
         tmp.program(instrn_buffer);
     } else {
         if (transpose_of_faces) {
             #if SKIP_UNP == 0
                 constexpr uint replay_buf_len = 3;
-                TTI_REPLAY(6, replay_buf_len, 0, 1);
+                TTI_REPLAY(4, replay_buf_len, 0, 1);
                 TTI_UNPACR_NOP(SrcB, p_unpacr_nop::UNP_ZEROSRC);
                 TTI_UNPACR_NOP(SrcB, p_unpacr_nop::UNP_SET_DVALID);
                 if (num_faces>2) {
@@ -105,7 +104,7 @@ inline void _llk_unpack_A_mop_config_(const bool transpose_of_faces, const std::
             #endif
             const uint32_t outerloop = num_faces < 4 ? 1 : 2;
             const uint32_t innerloop = num_faces < 2 ? 1 : 2;
-            ckernel_template tmp(outerloop, innerloop, TT_OP_REPLAY(6, replay_buf_len, 0, 0)); // Unpack faces 0/2 && 1/3 to srcA
+            ckernel_template tmp(outerloop, innerloop, TT_OP_REPLAY(4, replay_buf_len, 0, 0)); // Unpack faces 0/2 && 1/3 to srcA
                                                                                                // or 0/1 for 2 face tile
             if (num_faces>2) {
                 tmp.set_end_op(srca_set_z_1);
