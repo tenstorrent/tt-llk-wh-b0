@@ -149,7 +149,7 @@ inline void eltwise_unary_configure_mop(uint rows_per_inst, uint total_rows, con
         } else if constexpr (bcast_type == BroadcastType::SCALAR) {
             // ELTWADD with zeros will be used as a workaround
             outerloop = 1;
-            innerloop = 4 * (total_rows >> 3);
+            innerloop = num_faces * (total_rows >> 3);
             broadcast_type = p_elwise::SRCB_BCAST_ALL;
         }
 
