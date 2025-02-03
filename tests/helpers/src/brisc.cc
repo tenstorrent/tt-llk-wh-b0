@@ -96,6 +96,6 @@ void device_setup() {
 }
 
 int main(){
-    //device_setup();
+    device_setup();
     for(;;){}
 }
