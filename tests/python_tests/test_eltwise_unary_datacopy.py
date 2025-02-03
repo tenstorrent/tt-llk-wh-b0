@@ -8,7 +8,7 @@ torch.set_printoptions(linewidth=500)
 def generate_golden(operand1,format):
     return operand1
 
-@pytest.mark.parametrize("format",  ["Float32"]) #["Bfp8_b", "Float16_b", "Float16", "Int32","Float32"])
+@pytest.mark.parametrize("format",  ["Int32"]) #["Bfp8_b", "Float16_b", "Float16", "Int32","Float32"])
 @pytest.mark.parametrize("testname", ["eltwise_unary_datacopy_test"])
 @pytest.mark.parametrize("dest_acc", ["DEST_ACC"])
 def test_all(format, testname, dest_acc):
