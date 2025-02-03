@@ -31,7 +31,7 @@ def generate_golden(operations, operand1, operand2, data_format):
     
     return res
 
-@pytest.mark.parametrize("format", [ "Float16_b", "Float16_b", "Bfp8_b"])
+@pytest.mark.parametrize("format", [ "Float16_b", "Float16", "Bfp8_b"])
 @pytest.mark.parametrize("dest_acc", ["","DEST_ACC"])
 @pytest.mark.parametrize("testname", ["fill_dest_test"])
 def test_multiple_kernels(format, testname, dest_acc):
