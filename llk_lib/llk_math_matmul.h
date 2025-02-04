@@ -68,33 +68,23 @@ inline void _llk_math_dummy_matmul_continous() {
     // Runs for 32 cycles
     _llk_math_wait_for_dest_available_<DstSync::SyncFull>();
     math::set_dst_write_addr<DstTileLayout::Default, DstTileShape::Tile32x32>(0);
-    TTI_SETDVALID(0b11);        // Set DVALID on both SRCA and SRCB
-    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
-    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
-    TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+    // TTI_SETDVALID(0b11);        // Set DVALID on both SRCA and SRCB
     bool add_dummy = true;
+    // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
     while (add_dummy) {
         ckernel_template::run(instrn_buffer);
-        // for (uint i=0; i<2; i++) {
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0);
-        //     // TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_2, 0);
-        //     TTI_REPLAY(ckernel::math::replay_buf_offset, 8, 0, 0);
-        // }
         dummy_compute_sync_post_code[1] = 0xdada01;
         if (*dummy_compute_sync_addr_data_arrived == 1) {
             *dummy_compute_sync_addr_math_ack = 1;
             dummy_compute_sync_post_code[1] = 0xdada02;
             while (*dummy_compute_sync_addr_data_arrived == 1);
-            *dummy_compute_sync_addr_math_ack = 0;
-            
+            TTI_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_ABD_F);
             TTI_SETRWC(p_setrwc::CLR_AB, 0, 0, 0, 0, p_setrwc::SET_ABD_F);
             TT_ZEROACC(p_zeroacc::CLR_HALF, ADDR_MOD_3, (dest_offset_id % 2));
+            TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+            TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+            TTI_NOP;TTI_NOP;TTI_NOP;TTI_NOP;
+            *dummy_compute_sync_addr_math_ack = 0;            
             add_dummy = false;
             dummy_compute_sync_post_code[1] = 0xdada00;
         }
