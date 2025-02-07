@@ -14,7 +14,6 @@
 
 #include "sfpu/ckernel_sfpu_abs.h"
 #include "sfpu/ckernel_sfpu_add_int32.h"
-#include "sfpu/ckernel_sfpu_sub_int32.h"
 #include "sfpu/ckernel_sfpu_binary.h"
 #include "sfpu/ckernel_sfpu_binary_bitwise.h"
 #include "sfpu/ckernel_sfpu_cast_fp32_to_fp16a.h"
@@ -40,6 +39,7 @@
 #include "sfpu/ckernel_sfpu_sign.h"
 #include "sfpu/ckernel_sfpu_sqrt.h"
 #include "sfpu/ckernel_sfpu_square.h"
+#include "sfpu/ckernel_sfpu_sub_int32.h"
 #include "sfpu/ckernel_sfpu_tanh_derivative.h"
 #include "sfpu/ckernel_sfpu_tanh.h"
 #include "sfpu/ckernel_sfpu_topk.h"
