@@ -405,31 +405,32 @@ inline void matmul_configure_mop_throttled(bool transpose, const std::uint32_t c
             // FIXME
         }
     } else {
-        TTI_NOP;
-        if constexpr (NUM_NOPS > 1) {
-            TTI_NOP;
-        }
         TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0); // B0A0 // srca=srca, srcb+=8,  dest+=8
-        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B0A0 // srca+=16/32, srcb=0, dest+=8  // srca+=32 if transposed
         TTI_NOP;
         if constexpr (NUM_NOPS > 1) {
             TTI_NOP;
         }
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B0A0 // srca+=16/32, srcb=0, dest+=8  // srca+=32 if transposed
+
         TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0); // B0A1 // srca=srca, srcb+=8,  dest+=8  // A1 -> A2 if transposed
+        TTI_NOP;
+        if constexpr (NUM_NOPS > 1) {
+            TTI_NOP;
+        }
         TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_2, 0); // B0A1 // srca=0,    srcb=32,  dest+=8  // A1 -> A2 if transposed
 
-        TTI_NOP;
-        if constexpr (NUM_NOPS > 1) {
-            TTI_NOP;
-        }
         TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_0, 0); // B2A0 // srca=srca, srcb+=8,  dest+=8
-        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B2A0 // srca+=16/32, srcb=0, dest+=8 // srca+=32 if transposed
-
         TTI_NOP;
         if constexpr (NUM_NOPS > 1) {
             TTI_NOP;
         }
-        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_3, 0); // B2A1 // srca=srca, srcb+=8,  dest+=8,  bias=1 // A1 -> A2 if transposed        
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_1, 0); // B2A0 // srca+=16/32, srcb=0, dest+=8 // srca+=32 if transposed
+        
+        TTI_MVMUL(p_setrwc::CLR_NONE, 0, ADDR_MOD_3, 0); // B2A1 // srca=srca, srcb+=8,  dest+=8,  bias=1 // A1 -> A2 if transposed
+        TTI_NOP;
+        if constexpr (NUM_NOPS > 1) {
+            TTI_NOP;
+        }
     }
 
     constexpr uint outer_loops = 1;
