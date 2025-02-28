@@ -189,7 +189,7 @@ inline void dbg_get_array_row(const uint32_t array_id, const uint32_t row_addr, 
 
         // Latch debug values
         TTI_SETDVALID(0b10);
-        TTI_SHIFTXB(ADDR_MOD_0, 0, row_addr>>1);
+        TT_SHIFTXB(ADDR_MOD_0, 0, row_addr>>1);
         TTI_CLEARDVALID(0b10,0);
 
         // Wait for TT instructions to complete
